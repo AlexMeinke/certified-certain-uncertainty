@@ -79,7 +79,7 @@ class GMM(nn.Module):
                 for i in range(self.K):
                     assert (index==i).sum()>0, 'Empty cluster'
                     self.alpha.data[i] = (index==i).float().sum() / self.K
-                    temp = (X_MNIST[index==i,:] -self.mu.data[i,:]).norm(dim=1).mean()
+                    temp = (X[index==i,:] -self.mu.data[i,:]).norm(dim=1).mean()
                     if temp < 0.00001:
                         temp = torch.tensor(1.)
                     self.logvar.data[i] = temp.log() * 2

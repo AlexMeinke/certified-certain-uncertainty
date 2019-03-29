@@ -42,7 +42,13 @@ class GMM(nn.Module):
                 - .5*( self.D*self.NORM_CONST 
                       + self.D*self.logvar[:,None] 
                       + a/b ) )
-                                          
+    def calculate_bound(self, L):
+        var = self.logvar[:,None].exp()
+        bound = (self.alpha.log()[:,None] 
+                - .5*( self.D*self.NORM_CONST 
+                + self.D*self.logvar[:,None] 
+                + L/var ) )
+        return torch.logsumexp(bound.squeeze(),dim=0)
     
     def get_posteriors(self, X):
         log_like = self.forward(X)
@@ -132,28 +138,29 @@ class GMM(nn.Module):
 class NetVanilla(nn.Module):
     def __init__(self):
         super(NetVanilla, self).__init__()
-        self.conv1 = nn.Conv2d(1, 20, 5, 1)
-        self.conv2 = nn.Conv2d(20, 50, 5, 1)
-        self.fc1 = nn.Linear(4*4*50, 500)
-        self.fc2 = nn.Linear(500, 10)
+        self.conv1 = nn.Conv2d(1, 32, 5, 1)
+        self.conv2 = nn.Conv2d(32, 64, 5, 1)
+        self.fc1 = nn.Linear(4*4*64, 1024)
+        self.fc2 = nn.Linear(1024, 10)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(x, 2, 2)
         x = F.relu(self.conv2(x))
         x = F.max_pool2d(x, 2, 2)
-        x = x.view(-1, 4*4*50)
+        x = x.view(-1, 4*4*64)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         x = F.log_softmax(x, dim=1)
         return x
 
 class Net(nn.Module):
-    def __init__(self, base_model, X, K, loglam):
+    def __init__(self, base_model, X, K, loglam, dim=784):
         super(Net, self).__init__()
         self.base_model = base_model
         
-        self.gmm = GMM(K, 784)
+        self.dim = dim
+        self.gmm = GMM(K, self.dim)
         self.gmm.find_solution(X, iterate=False)
         #self.log_pz_lam = -784*torch.tensor(i).log().to(device)
         self.log_pz_lam = nn.Parameter(torch.tensor(loglam, dtype=torch.float))
@@ -162,7 +169,7 @@ class Net(nn.Module):
         
     def forward(self, x):
         batch_size = x.shape[0]
-        likelihood_per_peak = self.gmm(x.view(batch_size, 784))
+        likelihood_per_peak = self.gmm(x.view(batch_size, self.dim))
         like = self.gmm.logsumexp(likelihood_per_peak, 0)
 
         x = self.base_model(x)

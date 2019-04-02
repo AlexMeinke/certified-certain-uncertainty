@@ -42,12 +42,13 @@ class GMM(nn.Module):
                 - .5*( self.D*self.NORM_CONST 
                       + self.D*self.logvar[:,None] 
                       + a/b ) )
+    
     def calculate_bound(self, L):
         var = self.logvar[:,None].exp()
         bound = (self.alpha.log()[:,None] 
                 - .5*( self.D*self.NORM_CONST 
                 + self.D*self.logvar[:,None] 
-                + L/var ) )
+                + L**2/var ) )
         return torch.logsumexp(bound.squeeze(),dim=0)
     
     def get_posteriors(self, X):

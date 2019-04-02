@@ -35,6 +35,11 @@ EMNIST_train_loader = torch.utils.data.DataLoader(
                     transform=transforms.Compose([transform, Transpose()])),
     batch_size=batch_size, shuffle=True)
 
+EMNIST_gmm_loader = torch.utils.data.DataLoader(
+    datasets.EMNIST('../data', split='letters', download=True, train=True, 
+                    transform=transforms.Compose([transform, Transpose()])),
+    batch_size=3000, shuffle=True)
+
 EMNIST_test_loader = torch.utils.data.DataLoader(
     datasets.EMNIST('../data', split='letters', download=True, train=False, 
                     transform=transforms.Compose([transform, Transpose()])),
@@ -51,3 +56,4 @@ fashion_train_loader = torch.utils.data.DataLoader(
     batch_size=batch_size, shuffle=True)
 
 X_MNIST = enumerate(gmm_loader).__next__()[1][0].view(gmm_loader.batch_size, 784)
+X_EMNIST = enumerate(EMNIST_gmm_loader).__next__()[1][0].view(gmm_loader.batch_size, 784)

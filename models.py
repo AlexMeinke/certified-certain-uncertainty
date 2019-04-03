@@ -64,20 +64,24 @@ class GMM(nn.Module):
         
         self.alpha.data = Nk/Nk.sum()
         
-    def find_solution(self, X, initialize=True, iterate=True):
+    def find_solution(self, X, initialize=True, iterate=True, use_kmeans=True):
         
         assert X.device==self.mu.device, 'Data stored on ' + str(X.device) + ' but model on ' + str(self.mu.device)
         
         with torch.no_grad():
             if initialize:
                 m = X.size(0)
-                idxs = torch.from_numpy(np.random.choice(m, self.K, replace=False)).long()
-                self.mu.data = X[idxs]
+
                 
                 # find variance within its cluster
-                kmeans = KMeans(n_clusters=self.K, random_state=0, max_iter=300).fit(X.cpu())
-                #index = kmeans.predict(X_MNIST.cpu())
-                self.mu.data = torch.tensor(kmeans.cluster_centers_, dtype=torch.float, device=self.mu.device)
+                if (use_kmeans):
+                    kmeans = KMeans(n_clusters=self.K, random_state=0, max_iter=300).fit(X.cpu())
+                    self.mu.data = torch.tensor(kmeans.cluster_centers_, dtype=torch.float, device=self.mu.device)
+
+                else:
+                    idxs = torch.from_numpy(np.random.choice(m, self.K, replace=False)).long()
+                    self.mu.data = X[idxs]
+                    
                 index = (X[:,None,:]-torch.tensor(self.mu.data[None,:,:], dtype=torch.float)).norm(dim=2).min(dim=1)[1]
                 for i in range(self.K):
                     assert (index==i).sum()>0, 'Empty cluster'
@@ -162,16 +166,16 @@ class Net(nn.Module):
         
         self.dim = dim
         self.gmm = GMM(K, self.dim)
-        self.gmm.find_solution(X, iterate=False)
+        self.gmm.find_solution(X, iterate=False, use_kmeans=False)
         #self.log_pz_lam = -784*torch.tensor(i).log().to(device)
-        self.log_pz_lam = nn.Parameter(torch.tensor(loglam, dtype=torch.float))
+        self.loglam = nn.Parameter(torch.tensor(loglam, dtype=torch.float))
         self.log_K = -torch.tensor(10.).log()
         
         
     def forward(self, x):
         batch_size = x.shape[0]
         likelihood_per_peak = self.gmm(x.view(batch_size, self.dim))
-        like = self.gmm.logsumexp(likelihood_per_peak, 0)
+        like = torch.logsumexp(likelihood_per_peak, dim=0)
 
         x = self.base_model(x)
         

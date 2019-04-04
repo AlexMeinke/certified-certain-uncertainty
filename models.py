@@ -161,11 +161,13 @@ class QuadraticMixtureModel(MixtureModel):
         if self.alpha.min() < 0:
             self.prune()
         a = ((X[None,:,:]-self.mu[:,None,:])**2).sum(-1)
-        b = self.logvar[:,None].exp()
-        return (self.alpha.log()[:,None] - ( 1+ b/a ).log() )
+        var = self.logvar[:,None].exp()
+        return (self.alpha.log()[:,None] - ( 1+ a/var ).log() )
         
     def calculate_bound(self, L):
-        return 1.
+        var = self.logvar[:,None].exp()
+        bound = ( self.alpha.log()[:,None] - ( 1+ L**2/var ).log() ).squeeze()
+        return torch.logsumexp(bound, dim=0)
                         
 class LeNet(nn.Module):
     def __init__(self, preproc=torch.zeros(28, 28)):

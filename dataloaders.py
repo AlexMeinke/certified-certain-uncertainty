@@ -26,7 +26,7 @@ test_loader = torch.utils.data.DataLoader(
         batch_size=test_batch_size, shuffle=False)
 gmm_loader = torch.utils.data.DataLoader(
         datasets.MNIST('../data', train=True, download=True, transform=transform),
-        batch_size=3000, shuffle=True)
+        batch_size=3000, shuffle=False)
 
 
 #EMNIST is rotated 90 degrees from MNIST
@@ -38,7 +38,7 @@ EMNIST_train_loader = torch.utils.data.DataLoader(
 EMNIST_gmm_loader = torch.utils.data.DataLoader(
     datasets.EMNIST('../data', split='letters', download=True, train=True, 
                     transform=transforms.Compose([transform, Transpose()])),
-    batch_size=3000, shuffle=True)
+    batch_size=3000, shuffle=False)
 
 EMNIST_test_loader = torch.utils.data.DataLoader(
     datasets.EMNIST('../data', split='letters', download=True, train=False, 

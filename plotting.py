@@ -23,16 +23,32 @@ def plot_2d_sample(sample, mu=None, sig=None, idx=(0,1)):
             ax.add_artist(ellipse)
     plt.axis('equal')
     plt.show()
-    
 
-def plot_samples(Y, data):
+classes_CIFAR10 = ('plane',
+ 'car',
+ 'bird',
+ 'cat',
+ 'deer',
+ 'dog',
+ 'frog',
+ 'horse',
+ 'ship',
+ 'truck')
+
+def plot_samples(Y, data, dataset='MNIST'):
     for i in range(10):
         plt.subplot(2,5,i+1)
         string = ''
         for y in Y:
-            string += '\n' + str(y.argmax(1)[i].item()) + ":   %.2f" % y[i].max().exp().item() 
+            if dataset=='MNIST':
+                string += '\n' + str(y.argmax(1)[i].item()) + ": %.2f" % y[i].max().exp().item()
+            elif dataset=='CIFAR10':
+                string += '\n' + classes_CIFAR10[y.argmax(1)[i].item()] + ": %.2f" % y[i].max().exp().item()
         plt.title(string)
-        plt.imshow(data[i].squeeze(), cmap='gray', interpolation='none')
+        if dataset=='MNIST':
+            plt.imshow(data[i].squeeze(), cmap='gray', interpolation='none')
+        elif dataset=='CIFAR10':
+            plt.imshow(data[i].transpose(0,2).transpose(0,1), interpolation='none')
         plt.xticks([])
         plt.yticks([])
     plt.show()

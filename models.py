@@ -8,9 +8,41 @@ import torch.nn.functional as F
 
 from sklearn.cluster import KMeans
 
+import numpy as np
+from sklearn.decomposition import PCA
+
+class LpMetric(nn.Module):
+    def __init__(self, p=2):
+        super().__init__()
+        self.p = p
+        
+    def forward(self, x, y, dim=None):
+        return (x-y).norm(p=self.p, dim=dim)
+
+class PCAMetric(nn.Module):
+    def __init__(self, X, p=2):
+        super().__init__()
+        self.p = p
+        X = np.array(X)
+        pca = PCA()
+        pca.fit(X)
+
+        self.comp_vecs = nn.Parameter(torch.tensor(pca.components_), requires_grad=False)
+        self.singular_values = torch.tensor(pca.singular_values_)
+        self.min_sv = self.singular_values[0]/100.
+        self.singular_values[self.singular_values<self.min_sv] = self.min_sv
+        self.singular_values = nn.Parameter(self.singular_values, requires_grad=False)
+        
+    def forward(self, x, y, dim=None):
+        rotated_dist = torch.einsum("ijk,lk->ijl", (x-y, self.comp_vecs))
+        rescaled_dist = rotated_dist / self.singular_values[None,None,:]
+        return rescaled_dist.norm(dim=2, p=self.p)
+        
+
+
 class MixtureModel(nn.Module):
     
-    def __init__(self, K, D, mu=None, logvar=None, alpha=None):
+    def __init__(self, K, D, mu=None, logvar=None, alpha=None, metric=LpMetric()):
         """
         Initializes means, variances and weights randomly
         :param K: number of centroids
@@ -20,6 +52,7 @@ class MixtureModel(nn.Module):
 
         self.D = D
         self.K = K
+        self.metric = metric
         if mu is None:
             self.mu = nn.Parameter(torch.rand(K, D))
         else:
@@ -82,13 +115,13 @@ class MixtureModel(nn.Module):
 
             
 class GMM(MixtureModel):
-    def __init__(self, K, D, mu=None, logvar=None, alpha=None):
+    def __init__(self, K, D, mu=None, logvar=None, alpha=None, metric=LpMetric()):
         """
         Initializes means, variances and weights randomly
         :param K: number of centroids
         :param D: number of features
         """
-        super().__init__(K, D)
+        super().__init__(K, D, mu, logvar, alpha, metric)
 
     def forward(self, X):
         """
@@ -98,7 +131,7 @@ class GMM(MixtureModel):
         """
         if self.alpha.min() < 0:
             self.prune()
-        a = ((X[None,:,:]-self.mu[:,None,:])**2).sum(-1)
+        a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
         b = self.logvar[:,None].exp()
         return (self.alpha.log()[:,None] 
                 - ( a/b ) )
@@ -108,49 +141,16 @@ class GMM(MixtureModel):
         bound = (self.alpha.log()[:,None] 
                 - ( L**2/var ) )
         return torch.logsumexp(bound.squeeze(),dim=0)
-    
-    def EM_step(self, X):
-        log_post = self.get_posteriors(X)
-        post = log_post.exp()
-        Nk = post.sum(dim=1)
-        
-        self.mu.data = (post[:,:,None]*X[None,:,:]).sum(dim=1) / Nk[:,None]
-        temp = log_post + ((X[None,:,:]-self.mu[:,None,:])**2).sum(dim=-1).log()
-        self.logvar.data = (- Nk.log() 
-                       + torch.logsumexp(temp, dim=1, keepdim=False))
-        
-        self.alpha.data = Nk/Nk.sum()
-        
-    def get_posteriors(self, X):
-        log_like = self.forward(X)
-        log_post = log_like - torch.logsumexp(log_like, dim=0, keepdim=True)
-        return log_post
-    
-    def find_solution(self, X, initialize=True, iterate=True, use_kmeans=True):
-        super().find_solution(X, initialize=True, iterate=True, use_kmeans=True)
-        if iterate:
-            for _ in range(500):
-                mu_prev = self.mu
-                logvar_prev = self.logvar
-                alpha_prev = self.alpha
-                self.EM_step(X)
-                self.logvar.data[self.logvar < self.logvarbound] = self.logvarbound
-
-                delta = torch.stack( ((mu_prev-self.mu).abs().max(),
-                            (logvar_prev-self.logvar).abs().max(),
-                            (alpha_prev-self.alpha).abs().max()) ).max()
-
-                if delta<10e-6:
-                    break
+                    
 
 class QuadraticMixtureModel(MixtureModel):
-    def __init__(self, K, D, mu=None, logvar=None, alpha=None):
+    def __init__(self, K, D, mu=None, logvar=None, alpha=None, metric=LpMetric()):
         """
         Initializes means, variances and weights randomly
         :param K: number of centroids
         :param D: number of features
         """
-        super().__init__(K, D)
+        super().__init__(K, D, mu, logvar, alpha, metric)
 
     def forward(self, X):
         """
@@ -160,7 +160,7 @@ class QuadraticMixtureModel(MixtureModel):
         """
         if self.alpha.min() < 0:
             self.prune()
-        a = ((X[None,:,:]-self.mu[:,None,:])**2).sum(-1)
+        a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
         var = self.logvar[:,None].exp()
         return (self.alpha.log()[:,None] - ( 1+ a/var ).log() )
         

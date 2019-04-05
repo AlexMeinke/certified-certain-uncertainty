@@ -2,7 +2,7 @@ import torch
 from torchvision import datasets, transforms
 
 batch_size = 100
-test_batch_size = 100
+test_batch_size = 10
 
 
 class Transpose(object):
@@ -69,4 +69,9 @@ CIFAR10_test_loader = torch.utils.data.DataLoader(
 CIFAR10_gmm_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../data', train=True, download=True, transform=transform),
         batch_size=3000, shuffle=False)
+
 X_CIFAR10 = enumerate(CIFAR10_gmm_loader).__next__()[1][0].view(gmm_loader.batch_size, 3072)
+
+CIFAR100_test_loader = torch.utils.data.DataLoader(
+        datasets.CIFAR100('../data', train=False, transform=transform, download=True),
+        batch_size=10, shuffle=False)

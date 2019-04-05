@@ -20,7 +20,7 @@ class LpMetric(nn.Module):
         return (x-y).norm(p=self.p, dim=dim)
 
 class PCAMetric(nn.Module):
-    def __init__(self, X, p=2):
+    def __init__(self, X, p=2, min_sv_factor=100):
         super().__init__()
         self.p = p
         X = np.array(X)

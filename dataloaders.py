@@ -31,7 +31,7 @@ MNIST_gmm_loader = torch.utils.data.DataLoader(
         datasets.MNIST('../data', train=True, download=True, transform=transform),
         batch_size=3000, shuffle=False)
 
-X_MNIST = enumerate(gmm_loader).__next__()[1][0].view(gmm_loader.batch_size, 784)
+X_MNIST = enumerate(MNIST_gmm_loader).__next__()[1][0].view(MNIST_gmm_loader.batch_size, 784)
 
 #EMNIST is rotated 90 degrees from MNIST
 EMNIST_train_loader = torch.utils.data.DataLoader(
@@ -55,7 +55,7 @@ EMNIST_test_loader_digits = torch.utils.data.DataLoader(
     batch_size=test_batch_size, shuffle=True)
 
 
-X_EMNIST = enumerate(EMNIST_gmm_loader).__next__()[1][0].view(gmm_loader.batch_size, 784)
+X_EMNIST = enumerate(EMNIST_gmm_loader).__next__()[1][0].view(EMNIST_gmm_loader.batch_size, 784)
 
 
 
@@ -74,21 +74,21 @@ FMNIST_test_loader = torch.utils.data.DataLoader(
 
 
 
-class Grey(object):
+class Gray(object):
     def __init__(self):
         pass
     def __call__(self, data):
         return data.mean(-3, keepdim=True)
 
 
-grey_transform = transforms.Compose([
+gray_transform = transforms.Compose([
                             transforms.Resize(28),
                             transforms.ToTensor(),
-                            Grey()
+                            Gray()
                        ])
 
-GreyCIFAR10_test_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=False, transform=grey_transform),
+GrayCIFAR10_test_loader = torch.utils.data.DataLoader(
+        datasets.CIFAR10('../data', train=False, transform=gray_transform),
         batch_size=test_batch_size, shuffle=False)
 
 
@@ -105,12 +105,19 @@ class PermutationNoise(object):
             new_data[i] = (x.view(np.prod(shape[1:]))[idx]).view(shape[1:])
         return new_data
 
-
 class GaussianFilter(object):
-    def __init__(self, sigma=1.):
-        self.sigma = sigma
+    def __init__(self):
+        pass
     def __call__(self, data):
-        return filters.gaussian_filter(data, self.sigma)
+        sigma = 1.+1.5*torch.rand(1).item()
+        return torch.tensor(filters.gaussian_filter(data, sigma, mode='reflect'))
+    
+class ContrastRescaling(object):
+    def __init__(self):
+        pass
+    def __call__(self, data):
+        gamma = 5+ 25.*torch.rand(1).item()
+        return torch.sigmoid(gamma*(data-.5))
 
 noise_transform = transforms.Compose([
                             transforms.ToTensor(),
@@ -136,7 +143,7 @@ CIFAR10_gmm_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../data', train=True, download=True, transform=transform),
         batch_size=3000, shuffle=False)
 
-X_CIFAR10 = enumerate(CIFAR10_gmm_loader).__next__()[1][0].view(gmm_loader.batch_size, 3072)
+X_CIFAR10 = enumerate(CIFAR10_gmm_loader).__next__()[1][0].view(CIFAR10_gmm_loader.batch_size, 3072)
 
 CIFAR100_test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR100('../data', train=False, transform=transform, download=True),

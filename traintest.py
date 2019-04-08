@@ -101,7 +101,7 @@ def test_adv(model, device, adv_test_loader, min_conf=.1):
     print('\nAve. Confidence: {:.0f}% Predicted: {:.0f}%\n'.format(100.*av_conf, 100.*predicted))
     return av_conf
 
-def generate_adv_noise(model, epsilon, device=torch.device('cpu'), batch_size=10, norm=2, num_of_it=10, alpha=0.01, seed_images=None):
+def generate_adv_noise(model, epsilon, device=torch.device('cpu'), batch_size=10, norm=2, num_of_it=40, alpha=0.01, seed_images=None):
     if seed_images is None:
         image = (.22*torch.rand((batch_size,1,28,28)))
         #image = (torch.rand((batch_size,1,28,28)))

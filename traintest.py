@@ -27,7 +27,7 @@ def train_adv(model, device, train_loader, optimizer, epoch, verbose=True):
         output = model(data)
         
         #noise = generate_adv_noise(model, 0.1, batch_size=train_loader.batch_size)
-        noise = adv.generate_adv_noise(model, 0.1, batch_size=10, device=device)
+        noise = adv.gen_adv_noise(model, 0.1, batch_size=10, device=device)
         output_adv = model(noise)
         
         loss = F.nll_loss(output, target) - output_adv.sum()/(10*train_loader.batch_size)

@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import adversarial as adv
 
 def train(model, device, train_loader, optimizer, epoch, verbose=True):
     model.train()
@@ -26,7 +27,7 @@ def train_adv(model, device, train_loader, optimizer, epoch, verbose=True):
         output = model(data)
         
         #noise = generate_adv_noise(model, 0.1, batch_size=train_loader.batch_size)
-        noise = generate_adv_noise(model, 0.1, batch_size=10, device=device)
+        noise = adv.generate_adv_noise(model, 0.1, batch_size=10, device=device)
         output_adv = model(noise)
         
         loss = F.nll_loss(output, target) - output_adv.sum()/(10*train_loader.batch_size)
@@ -101,29 +102,3 @@ def test_adv(model, device, adv_test_loader, min_conf=.1):
     print('\nAve. Confidence: {:.0f}% Predicted: {:.0f}%\n'.format(100.*av_conf, 100.*predicted))
     return av_conf
 
-def generate_adv_noise(model, epsilon, device=torch.device('cpu'), batch_size=10, norm=2, num_of_it=40, alpha=0.01, seed_images=None):
-    if seed_images is None:
-        image = (.22*torch.rand((batch_size,1,28,28)))
-        #image = (torch.rand((batch_size,1,28,28)))
-    else:
-        image = seed_images
-    image = image.to(device).requires_grad_()
-
-    perturbed_image = image
-    for _ in range(num_of_it):
-        y = model(perturbed_image)
-        #loss = -y.max(dim=1)[0].sum()
-        loss = -y.sum()
-        loss.backward()
-
-        with torch.no_grad():
-            perturbed_image += alpha*image.grad
-
-            delta = perturbed_image-image
-            #delta /= delta.view((batch_size,784)).norm(p=norm, dim=1)[:,None,None,None]
-            #delta *= epsilon
-            perturbed_image = image + delta
-            perturbed_image = torch.clamp(perturbed_image, 0, 1)
-
-            perturbed_image = perturbed_image.detach()
-    return perturbed_image

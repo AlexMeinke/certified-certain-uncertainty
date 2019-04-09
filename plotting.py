@@ -41,9 +41,9 @@ def plot_samples(Y, data, dataset='MNIST'):
         string = ''
         for y in Y:
             if dataset=='MNIST':
-                string += '\n' + str(y.argmax(1)[i].item()) + ": %.2f" % y[i].max().exp().item()
+                string += '\n' + str(y.argmax(1)[i].item()) + ": %.3f" % y[i].max().exp().item()
             elif dataset=='CIFAR10':
-                string += '\n' + classes_CIFAR10[y.argmax(1)[i].item()] + ": %.2f" % y[i].max().exp().item()
+                string += '\n' + classes_CIFAR10[y.argmax(1)[i].item()] + ": %.3f" % y[i].max().exp().item()
         plt.title(string)
         if dataset=='MNIST':
             plt.imshow(data[i].squeeze(), cmap='gray', interpolation='none')

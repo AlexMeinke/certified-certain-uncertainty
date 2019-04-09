@@ -1,55 +1,97 @@
 import torch
 import torch.nn.functional as F
 
-def generate_adv_noise(model, epsilon, device=torch.device('cpu'), batch_size=10, norm=2, num_of_it=40, alpha=0.01, seed_images=None):
-    if seed_images is None:
-        image = (.22*torch.rand((batch_size,1,28,28)))
-        #image = (torch.rand((batch_size,1,28,28)))
-    else:
-        image = seed_images
-    image = image.to(device).requires_grad_()
-    perturbed_image = image
-    for _ in range(num_of_it):
-        with torch.enable_grad():
-            y = model(perturbed_image)
-            loss = -y.sum()
-
-        loss.backward()
-
-        with torch.no_grad():
-            perturbed_image += alpha*image.grad
-
-            delta = perturbed_image-image
-            delta /= delta.view((batch_size,784)).norm(p=norm, dim=1)[:,None,None,None]
-            delta *= epsilon
-            perturbed_image = image + delta
-            perturbed_image = torch.clamp(perturbed_image, 0, 1)
-
-            perturbed_image = perturbed_image.detach()
-    return perturbed_image
-
-def generate_adv_sample(model, epsilon, seed_images, seed_labels,
-                        device=torch.device('cpu'), 
-                        batch_size=10, norm=2, 
-                        num_of_it=40, alpha=0.01):
+def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
     
-    image = seed_images.to(device).requires_grad_()
-    perturbed_image = image
-    for _ in range(num_of_it):
+    with torch.no_grad():
+        batch_size = seed.shape[0]
+        alpha = step_size * torch.ones(batch_size,1,1,1, device=device)
+
+        orig_data = seed.to(device)
+        prev_data = seed.to(device)
+        data = seed.to(device).requires_grad_()
+
+        prev_losses = -100000.*torch.ones(batch_size, device=device)
+        prev_grad = torch.zeros_like(seed, device=device)
+    for _ in range(steps):
         with torch.enable_grad():
-            y = model(perturbed_image)
-            loss = F.nll_loss(y, seed_labels)
-        
-        loss.backward()
-
+            y = model(data)
+            losses = y.max(1)[0]
+            losses.sum().backward()
+            
         with torch.no_grad():
-            perturbed_image += alpha*image.grad
+            grad = data.grad.sign()
+            regret_index = losses<prev_losses
+            alpha[regret_index] /= 2.
+            data[regret_index] = prev_data[regret_index]
+            grad[regret_index] = prev_grad[regret_index]
+            
+            prev_losses=losses
+            prev_data = data
+            prev_grad = grad
+            
 
-            delta = perturbed_image-image
-            #delta /= delta.view((batch_size,784)).norm(p=norm, dim=1)[:,None,None,None]
-            #delta *= epsilon
-            perturbed_image = image + delta
-            perturbed_image = torch.clamp(perturbed_image, 0, 1)
+            data += alpha*grad
+            delta = torch.clamp(data-orig_data, -epsilon, epsilon)
+            data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
+    return data
 
-            perturbed_image = perturbed_image.detach()
-    return perturbed_image
+def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.01):
+    correct_index = label[:,None]!=torch.arange(10)[None,:]
+    with torch.no_grad():
+        batch_size = seed.shape[0]
+        alpha = step_size * torch.ones(batch_size,1,1,1, device=device)
+
+        orig_data = seed.to(device)
+        prev_data = seed.to(device)
+        data = seed.to(device).requires_grad_()
+
+        prev_losses = -100000.*torch.ones(batch_size, device=device)
+        prev_grad = torch.zeros_like(seed, device=device)
+    for _ in range(steps):
+        with torch.enable_grad():
+            y = model(data)
+            losses = y[correct_index].view(10,9).max(1)[0]
+            losses.sum().backward()
+            
+        with torch.no_grad():
+            grad = data.grad.sign()
+            regret_index = losses<prev_losses
+            alpha[regret_index] /= 2.
+            data[regret_index] = prev_data[regret_index]
+            grad[regret_index] = prev_grad[regret_index]
+            
+            prev_losses=losses
+            prev_data = data
+            prev_grad = grad
+            
+
+            data += alpha*grad
+            delta = torch.clamp(data-orig_data, -epsilon, epsilon)
+            data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
+    return data
+
+import torch.utils.data as data_utils
+def create_adv_noise_loader(model, dataloader, device):
+    new_data = []
+    for batch_idx, (data, target) in enumerate(dataloader):
+        new_data.append(gen_adv_noise(model, device, 
+                                      data, epsilon=0.3,
+                                      steps=200).detach().cpu()
+                       )
+    new_data = torch.cat(new_data, 0)
+
+    adv_noise_set = data_utils.TensorDataset(new_data, torch.zeros(len(dataloader.dataset),10))
+    return data_utils.DataLoader(adv_noise_set, batch_size=10, shuffle=False)
+
+def create_adv_noise_loader(model, dataloader, device):
+    new_data = []
+    for batch_idx, (data, target) in enumerate(dataloader):
+        new_data.append(gen_adv_sample(model, device, 
+                                       data, target,
+                                       epsilon=0.3, steps=200).detach().cpu()
+                       )
+    new_data = torch.cat(new_data, 0)
+
+    adv_sample_set = data_utils.TensorDataset(new_data, torch.zeros(len(dataloader.dataset),10))
+    return data_utils.DataLoader(adv_sample_set, batch_size=10, shuffle=False)

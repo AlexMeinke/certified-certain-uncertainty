@@ -37,9 +37,18 @@ class PCAMetric(nn.Module):
         rotated_dist = torch.einsum("ijk,lk->ijl", (x-y, self.comp_vecs))
         rescaled_dist = rotated_dist / self.singular_values[None,None,:]
         return rescaled_dist.norm(dim=2, p=self.p)
+
+    
+class PerceptualMetric(nn.Module):
+    def __init__(self, model, p=2):
+        super().__init__()
+        self.model = model
+        self.p = p
         
+    def forward(self, x, y, dim=None):
+        return (self.model(x)[None,:,:]-self.model(y)[:,None,:]).norm(p=self.p, dim=dim)
 
-
+    
 class MixtureModel(nn.Module):
     
     def __init__(self, K, D, mu=None, logvar=None, alpha=None, metric=LpMetric()):
@@ -211,6 +220,7 @@ class LeNetMadry(nn.Module):
         x = F.log_softmax(x, dim=1)
         return x
 
+    
 class RobustModel(nn.Module):
     def __init__(self, base_model, mixture_model, loglam, dim=784, classes=10):
         super().__init__()

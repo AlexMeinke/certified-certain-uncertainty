@@ -18,17 +18,18 @@ def train(model, device, train_loader, optimizer, epoch, verbose=True):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
 
-def train_adv(model, device, train_loader, optimizer, epoch, verbose=True):
+def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, verbose=True):
     model.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
+    for ((batch_idx, (data, target)), (_, (noise, _))) in zip(enumerate(train_loader),enumerate(noise_loader)):
         data, target = data.to(device), target.to(device)
+        noise = noise.to(device)
 
         optimizer.zero_grad()
         output = model(data)
         
         #noise = generate_adv_noise(model, 0.1, batch_size=train_loader.batch_size)
-        noise = adv.gen_adv_noise(model, 0.1, batch_size=10, device=device)
-        output_adv = model(noise)
+        adv_noise = adv.gen_adv_noise(model, device, noise, epsilon=0.3)
+        output_adv = model(adv_noise)
         
         loss = F.nll_loss(output, target) - output_adv.sum()/(10*train_loader.batch_size)
         loss.backward()

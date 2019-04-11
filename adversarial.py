@@ -84,7 +84,7 @@ def create_adv_noise_loader(model, dataloader, device):
     adv_noise_set = data_utils.TensorDataset(new_data, torch.zeros(len(dataloader.dataset),10))
     return data_utils.DataLoader(adv_noise_set, batch_size=10, shuffle=False)
 
-def create_adv_noise_loader(model, dataloader, device):
+def create_adv_sample_loader(model, dataloader, device):
     new_data = []
     for batch_idx, (data, target) in enumerate(dataloader):
         new_data.append(gen_adv_sample(model, device, 

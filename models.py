@@ -38,7 +38,17 @@ class PCAMetric(nn.Module):
         rescaled_dist = rotated_dist / self.singular_values[None,None,:]
         return rescaled_dist.norm(dim=2, p=self.p)
 
-    
+class LossModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 32, 5, 1, padding=2)
+        
+    def forward(self, x):
+        x = x.view(-1,1,28,28)
+        x = F.relu(self.conv1(x))
+        x = F.max_pool2d(x, 2, 2).view(-1,14*14*32)
+        return x
+
 class PerceptualMetric(nn.Module):
     def __init__(self, model, p=2):
         super().__init__()
@@ -220,8 +230,7 @@ class LeNetMadry(nn.Module):
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(x, 2, 2)
         x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2, 2).transpose(1,2).transpose(2,3)
-        x = x.contiguous()
+        x = F.max_pool2d(x, 2, 2)
         x = x.view(-1, 7*7*64)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)

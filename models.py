@@ -48,6 +48,14 @@ class PerceptualMetric(nn.Module):
     def forward(self, x, y, dim=None):
         return (self.model(x)[None,:,:]-self.model(y)[:,None,:]).norm(p=self.p, dim=dim)
 
+class PerceptualPCA(nn.Module):
+    def __init__(self, model, pca, p=2):
+        super().__init__()
+        self.model = model
+        self.pca = pca
+        
+    def forward(self, x, y, dim=None):
+        return self.pca(self.model(x)[None,:,:], self.model(y)[:,None,:])
     
 class MixtureModel(nn.Module):
     

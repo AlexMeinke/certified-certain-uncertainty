@@ -102,6 +102,23 @@ class MixtureModel(nn.Module):
     
     def calculate_bound(self, L):
         pass
+    
+    def get_posteriors(self, X):
+        log_like = self.forward(X)
+        log_post = log_like - torch.logsumexp(log_like, dim=0, keepdim=True)
+        return log_post
+    
+    def EM_step(self, X):
+        log_post = self.get_posteriors(X)
+        post = log_post.exp()
+        Nk = post.sum(dim=1)
+        
+        self.mu.data = (post[:,:,None]*X[None,:,:]).sum(dim=1) / Nk[:,None]
+        temp = log_post + ((X[None,:,:]-self.mu[:,None,:])**2).sum(dim=-1).log()
+        self.logvar.data = (- Nk.log() 
+                       + torch.logsumexp(temp, dim=1, keepdim=False))
+        
+        self.alpha.data = Nk/Nk.sum()
         
     def find_solution(self, X, initialize=True, iterate=True, use_kmeans=True):
         assert X.device==self.mu.device, 'Data stored on ' + str(X.device) + ' but model on ' + str(self.mu.device)
@@ -127,6 +144,21 @@ class MixtureModel(nn.Module):
                     self.logvar.data[i] = temp.log() * 2
 
                 self.logvarbound = (X.var() / m).log()
+                
+            if iterate:
+                for _ in range(500):
+                    mu_prev = self.mu
+                    logvar_prev = self.logvar
+                    alpha_prev = self.alpha
+                    self.EM_step(X)
+                    self.logvar.data[self.logvar < self.logvarbound] = self.logvarbound
+
+                    delta = torch.stack( ((mu_prev-self.mu).abs().max(),
+                                (logvar_prev-self.logvar).abs().max(),
+                                (alpha_prev-self.alpha).abs().max()) ).max()
+
+                    if delta<10e-6:
+                        break
 
     def prune(self):
         """

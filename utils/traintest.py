@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-import adversarial as adv
+import utils.adversarial as adv
 
 def train(model, device, train_loader, optimizer, epoch, verbose=True):
     model.train()
@@ -17,6 +17,26 @@ def train(model, device, train_loader, optimizer, epoch, verbose=True):
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
+            
+def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, verbose=True):
+    model.train()
+    for ((batch_idx, (data, target)), (_, (noise, _))) in zip(enumerate(train_loader),enumerate(noise_loader)):
+        data, target = data.to(device), target.to(device)
+        noise = noise.to(device)
+
+        optimizer.zero_grad()
+        output = model(data)
+        
+        output_adv = model(noise)
+        
+        loss = F.nll_loss(output, target) - output_adv.sum()/(10*train_loader.batch_size)
+        loss.backward()
+        optimizer.step()
+        if batch_idx % 100 == 0 and verbose:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
+            
 
 def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, verbose=True):
     model.train()

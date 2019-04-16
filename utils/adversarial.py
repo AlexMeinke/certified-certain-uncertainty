@@ -36,7 +36,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
             data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
     return data.detach()
 
-def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.01):
+def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.001):
     correct_index = label[:,None]!=torch.arange(10)[None,:]
     with torch.no_grad():
         batch_size = seed.shape[0]
@@ -72,26 +72,30 @@ def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=
     return data.detach()
 
 import torch.utils.data as data_utils
-def create_adv_noise_loader(model, dataloader, device):
+def create_adv_noise_loader(model, dataloader, device, batches=50):
     new_data = []
     for batch_idx, (data, target) in enumerate(dataloader):
+        if batch_idx > batches:
+            break
         new_data.append(gen_adv_noise(model, device, 
                                       data, epsilon=0.3,
                                       steps=200).detach().cpu()
                        )
     new_data = torch.cat(new_data, 0)
 
-    adv_noise_set = data_utils.TensorDataset(new_data, torch.zeros(len(dataloader.dataset),10))
+    adv_noise_set = data_utils.TensorDataset(new_data, torch.zeros(len(new_data),10))
     return data_utils.DataLoader(adv_noise_set, batch_size=10, shuffle=False)
 
-def create_adv_sample_loader(model, dataloader, device):
+def create_adv_sample_loader(model, dataloader, device, batches=50):
     new_data = []
     for batch_idx, (data, target) in enumerate(dataloader):
+        if batch_idx > batches:
+            break
         new_data.append(gen_adv_sample(model, device, 
                                        data, target,
                                        epsilon=0.3, steps=200).detach().cpu()
                        )
     new_data = torch.cat(new_data, 0)
 
-    adv_sample_set = data_utils.TensorDataset(new_data, torch.zeros(len(dataloader.dataset),10))
+    adv_sample_set = data_utils.TensorDataset(new_data, torch.zeros(len(new_data),10))
     return data_utils.DataLoader(adv_sample_set, batch_size=10, shuffle=False)

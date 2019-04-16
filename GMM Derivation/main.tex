@@ -112,5 +112,38 @@ L^2 \geq 2 \max_k \left( \sigma_k^2 \right) \log \left[ \frac{(M-1)\sum_k \alpha
 \end{equation}
 \end{proof}
 
+\section{Results}
+Running only ACET on a plain model for 100 epochs with weight decay 5e-4 yields TE:$1.02\%$ and the following table:
+\begin{tabular}{lrll}
+\toprule
+{} &       MMC &     AUROC &      FPR@95 \\
+DataSet     &           &           &             \\
+\midrule
+MNIST       &  0.988259 &         - &           - \\
+FMNIST      &  0.365331 &  0.996005 &        0.01 \\
+EMNIST      &  0.793649 &   0.91973 &      0.3669 \\
+GrayCIFAR10 &  0.103446 &  0.999991 &           0 \\
+Noise       &  0.100000 &         1 &           0 \\
+Adv. Noise  &  0.103789 &  0.999131 &  0.00392157 \\
+Adv. Sample &  0.917343 &  0.815271 &    0.676471 \\
+\bottomrule
+\end{tabular}
+Simply gluing a gmm with $K=1000$, initialized via EM without kmeans++, with $\log \lambda = -5$ on top yields
+
+\begin{tabular}{lrll}
+\toprule
+{} &       MMC &     AUROC &    FPR@95 \\
+DataSet     &           &           &           \\
+\midrule
+MNIST       &  0.970583 &         - &         - \\
+FMNIST      &  0.344049 &  0.996876 &    0.0007 \\
+EMNIST      &  0.772563 &   0.91675 &    0.2777 \\
+GrayCIFAR10 &  0.101902 &  0.924797 &         0 \\
+Noise       &  0.100000 &         1 &         0 \\
+Adv. Noise  &  0.100000 &         1 &         0 \\
+Adv. Sample &  0.904045 &  0.705438 &  0.641177 \\
+\bottomrule
+\end{tabular}
+
 
 \end{document}

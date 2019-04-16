@@ -36,8 +36,12 @@ device = torch.device('cuda:' + str(hps.gpu))
 
 if hps.dataset=='MNIST':
     base_model = models.LeNetMadry().to(device)
+    train_loader = dl.MNIST_train_loader
+    noise_loader = dl.Noise_train_loader_MNIST
 elif hps.dataset=='CIFAR10':
     base_model = resnet.ResNet50().to(device).to(device)
+    train_loader = dl.CIFAR10_train_loader
+    noise_loader = dl.Noise_train_loader_CIFAR10
 
 if hps.gmm:
     loading_string = hps.dataset+'_n'+str(hps.n) 
@@ -63,10 +67,10 @@ for epoch in range(100):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
-    tt.train_ACET(model, device, dl.MNIST_train_loader, dl.Noise_loader, optimizer, epoch)
+    tt.train_ACET(model, device, train_loader, noise_loader, optimizer, epoch)
 torch.save(model, 'SavedModels/gmm_model_'+saving_string+ '.pth')
 
 
-
-gmm_df = ev.evaluate_MNIST(model, device)
-gmm_df.to_csv('results/gmm_model_joint'+saving_string+'.csv')
+if hps.dataset=='MNIST':
+    df = ev.evaluate_MNIST(model, device)
+    df.to_csv('results/gmm_model_joint'+saving_string+'.csv')

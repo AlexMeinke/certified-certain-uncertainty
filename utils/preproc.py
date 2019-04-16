@@ -22,9 +22,9 @@ class PermutationNoise(object):
     def __call__(self, data):
         shape = data.shape
         new_data = 0*data
-        for (i, x) in enumerate(data):
-            idx = torch.tensor(np.random.permutation(np.prod(shape[1:])))
-            new_data[i] = (x.view(np.prod(shape[1:]))[idx]).view(shape[1:])
+        idx = [torch.tensor(np.random.permutation(np.prod(shape[-2:])))]
+        for i, x in enumerate(data):
+            new_data[i] = (x.view(np.prod(shape[-2:]))[idx]).view(shape[-2:])
         return new_data
 
 class GaussianFilter(object):
@@ -55,11 +55,15 @@ class AdversarialNoise(object):
                                        alpha=0.01, seed_images=data.unsqueeze(0))
         return perturbed.squeeze(0)
 
+
+
 noise_transform = transforms.Compose([
                             transforms.ToTensor(),
                             PermutationNoise(),
-                            GaussianFilter()
+                            GaussianFilter(),
+                            ContrastRescaling()
                        ])
+
 
 gray_transform = transforms.Compose([
                             transforms.Resize(28),

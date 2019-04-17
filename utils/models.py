@@ -74,6 +74,9 @@ class MixtureModel(nn.Module):
         Initializes means, variances and weights randomly
         :param K: number of centroids
         :param D: number of features
+        :param mu: centers of centroids (K,D)
+        :param logvar: logarithm of the variances of the centroids (K)
+        :param alpha: logarithm of the weights of the centroids (K)
         """
         super().__init__()
 
@@ -83,17 +86,17 @@ class MixtureModel(nn.Module):
         if mu is None:
             self.mu = nn.Parameter(torch.rand(K, D))
         else:
-            self.mu = nn.Parameter(mu.copy())
+            self.mu = nn.Parameter(mu)
             
         if logvar is None:
             self.logvar = nn.Parameter(torch.rand(K))
         else:
-            self.logvar = nn.Parameter(logvar.copy())
+            self.logvar = nn.Parameter(logvar)
             
         if alpha is None:
-            self.alpha = nn.Parameter(torch.empty(K).fill_(1. / K))
+            self.alpha = nn.Parameter(torch.empty(K).fill_(1. / K)).log()
         else:
-            self.alpha = nn.Parameter(alpha.copy())
+            self.alpha = nn.Parameter(alpha)
 
         self.logvarbound = 0
         
@@ -118,7 +121,7 @@ class MixtureModel(nn.Module):
         self.logvar.data = (- Nk.log() 
                        + torch.logsumexp(temp, dim=1, keepdim=False))
         
-        self.alpha.data = Nk/Nk.sum()
+        self.alpha = nn.Parameter( (Nk/Nk.sum()).log() )
         
     def find_solution(self, X, initialize=True, iterate=True, use_kmeans=True):
         assert X.device==self.mu.device, 'Data stored on ' + str(X.device) + ' but model on ' + str(self.mu.device)
@@ -137,7 +140,7 @@ class MixtureModel(nn.Module):
                 index = (X[:,None,:]-self.mu.clone().detach()[None,:,:]).norm(dim=2).min(dim=1)[1]
                 for i in range(self.K):
                     assert (index==i).sum()>0, 'Empty cluster'
-                    self.alpha.data[i] = (index==i).float().sum() / (3*self.K)
+                    self.alpha.data[i] = ((index==i).float().sum() / (3*self.K)).log()
                     temp = (X[index==i,:] -self.mu.data[i,:]).norm(dim=1).mean()
                     if temp < 0.00001:
                         temp = torch.tensor(1.)
@@ -160,17 +163,6 @@ class MixtureModel(nn.Module):
                     if delta<10e-6:
                         break
 
-    def prune(self):
-        """
-        prunes away centroids with negative weigths
-        """
-        with torch.no_grad():
-            index = torch.nonzero(self.alpha > 0)
-
-            self.mu = nn.Parameter(self.mu[index].squeeze(1))
-            self.logvar = nn.Parameter(self.logvar[index].squeeze(1))
-            self.alpha = nn.Parameter(self.alpha[index].squeeze(1))
-            self.K = len(index)
 
             
 class GMM(MixtureModel):
@@ -188,16 +180,14 @@ class GMM(MixtureModel):
         :param X: design matrix (examples, features) (N,D)
         :return likelihoods: (K, examples) (K, N)
         """
-        if self.alpha.min() < 0:
-            self.prune()
         a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
         b = self.logvar[:,None].exp()
-        return (self.alpha.log()[:,None] 
+        return (self.alpha[:,None] 
                 - ( a/b ) )
         
     def calculate_bound(self, L):
         var = self.logvar[:,None].exp()
-        bound = (self.alpha.log()[:,None] 
+        bound = (self.alpha[:,None] 
                 - ( L**2/var ) )
         return torch.logsumexp(bound.squeeze(),dim=0)
                     
@@ -217,15 +207,13 @@ class QuadraticMixtureModel(MixtureModel):
         :param X: design matrix (examples, features) (N,D)
         :return likelihoods: (K, examples) (K, N)
         """
-        if self.alpha.min() < 0:
-            self.prune()
         a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
         var = self.logvar[:,None].exp()
-        return (self.alpha.log()[:,None] - ( 1+ a/var ).log() )
+        return (self.alpha[:,None] - ( 1+ a/var ).log() )
         
     def calculate_bound(self, L):
         var = self.logvar[:,None].exp()
-        bound = ( self.alpha.log()[:,None] - ( 1+ L**2/var ).log() ).squeeze()
+        bound = ( self.alpha[:,None] - ( 1+ L**2/var ).log() ).squeeze()
         return torch.logsumexp(bound, dim=0)
                         
 class LeNet(nn.Module):

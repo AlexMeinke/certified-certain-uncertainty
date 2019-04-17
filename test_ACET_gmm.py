@@ -52,6 +52,7 @@ noise_loader = dl.PrecomputeLoader(noise_loader)
 if hps.use_gmm:
     loading_string = hps.dataset+'_n'+str(hps.n) 
     gmm = torch.load('SavedModels/gmm_'+loading_string+'.pth')
+    gmm.alpha = nn.Parameter(gmm.alpha)
     model = models.RobustModel(base_model, gmm, hps.lam).to(device)
     model.loglam.requires_grad = False
 else:
@@ -70,11 +71,15 @@ else:
 optimizer = optim.Adam(param_groups)
 
 for epoch in range(hps.epochs):
+    if epoch==1:
+        for group in optimizer.param_groups:
+            group['lr'] *= 10.
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
     tt.train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=hps.steps, verbose=False)
     correct, ave_conf = tt.test(model, device, dl.MNIST_test_loader)
+    writer.add_scalar('TestSet/TrainLoss', correct, epoch)
     writer.add_scalar('TestSet/Correct', correct, epoch)
     writer.add_scalar('TestSet/Confidence', ave_conf, epoch)
     if (epoch)%5==0:

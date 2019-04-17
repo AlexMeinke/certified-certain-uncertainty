@@ -60,6 +60,7 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, step
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
+    return loss
             
 def train_adv2(model, device, train_loader, optimizer, epoch, adv_loader, verbose=True):
     model.train()

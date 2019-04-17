@@ -71,15 +71,15 @@ else:
 optimizer = optim.Adam(param_groups)
 
 for epoch in range(hps.epochs):
-    if epoch==1:
+    if epoch==10:
         for group in optimizer.param_groups:
             group['lr'] *= 10.
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
-    tt.train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=hps.steps, verbose=False)
+    error = tt.train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=hps.steps, verbose=False)
     correct, ave_conf = tt.test(model, device, dl.MNIST_test_loader)
-    writer.add_scalar('TestSet/TrainLoss', correct, epoch)
+    writer.add_scalar('TestSet/TrainLoss', error, epoch)
     writer.add_scalar('TestSet/Correct', correct, epoch)
     writer.add_scalar('TestSet/Confidence', ave_conf, epoch)
     if (epoch)%5==0:

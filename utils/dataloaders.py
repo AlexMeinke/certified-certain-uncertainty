@@ -1,5 +1,6 @@
 import torch
 from torchvision import datasets, transforms
+import torch.utils.data as data_utils
 
 import numpy as np
 import scipy.ndimage.filters as filters
@@ -84,3 +85,18 @@ CIFAR10_test_loader = torch.utils.data.DataLoader(
 CIFAR100_test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR100('../data', train=False, transform=pre.MNIST_transform),
         batch_size=10, shuffle=False)
+
+
+
+
+def PrecomputeLoader(loader, batch_size=100, shuffle=True):
+    X = []
+    L = []
+    for x,l in Noise_train_loader_MNIST:
+        X.append(x)
+        L.append(l)
+    X = torch.cat(X, 0)
+    L = torch.cat(L, 0)
+    
+    train = data_utils.TensorDataset(X, L)
+    return data_utils.DataLoader(train, batch_size=batch_size, shuffle=shuffle)

@@ -43,14 +43,14 @@ def evaluate_model(model, device, base_loader, loaders):
     return df.set_index('DataSet')
 
 def evaluate_MNIST(model, device):
-    AdversarialNoiseLoader = adv.create_adv_noise_loader(model, dl.Noise_loader, device)
+    AdversarialNoiseLoader = adv.create_adv_noise_loader(model, dl.Noise_test_loader_MNIST, device)
     AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.MNIST_test_loader, device)
 
     loaders = (
     [('FMNIST', dl.FMNIST_test_loader), 
      ('EMNIST', dl.EMNIST_test_loader),
      ('GrayCIFAR10', dl.GrayCIFAR10_test_loader),
-     ('Noise', dl.Noise_loader),
+     ('Noise', dl.Noise_test_loader_MNIST),
      ('Adv. Noise', AdversarialNoiseLoader ),
      ('Adv. Sample', AdversarialSampleLoader)]
     )

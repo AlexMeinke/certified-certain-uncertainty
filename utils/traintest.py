@@ -38,7 +38,7 @@ def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, verb
                 100. * batch_idx / len(train_loader), loss.item()))
             
 
-def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, verbose=True):
+def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=True):
     model.train()
     for ((batch_idx, (data, target)), (_, (noise, _))) in zip(enumerate(train_loader),enumerate(noise_loader)):
         data, target = data.to(device), target.to(device)
@@ -48,12 +48,14 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, verb
         output = model(data)
         
         #noise = generate_adv_noise(model, 0.1, batch_size=train_loader.batch_size)
-        adv_noise = adv.gen_adv_noise(model, device, noise, epsilon=0.3)
+        adv_noise = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=steps)
         output_adv = model(adv_noise)
         
         loss = F.nll_loss(output, target) - output_adv.sum()/(10*train_loader.batch_size)
         loss.backward()
+
         optimizer.step()
+
         if batch_idx % 100 == 0 and verbose:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
@@ -99,9 +101,6 @@ def test(model, device, test_loader, min_conf=.1):
     test_loss /= len(test_loader.dataset)
     av_conf /= len(test_loader.dataset)
     
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%), Ave. Confidence: {:.0f}%\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset), 100. * av_conf))
     return correct, av_conf
 
 def test_adv(model, device, adv_test_loader, min_conf=.1):

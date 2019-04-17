@@ -23,7 +23,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Define hyperparameters.')
 parser.add_argument('--gpu', type=int, default=3, help='GPU index.')
-parser.add_argument('--lr', type=float, default=1e-3, help='initial learning rate.')
+parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate.')
 parser.add_argument('--lam', type=float, default=-3., help='log of lambda.')
 parser.add_argument('--n', type=int, default=1000, help='number of centroids.')
 parser.add_argument('--decay', type=float, default=5e-4, help='weight decay for base model.')
@@ -71,9 +71,6 @@ else:
 optimizer = optim.Adam(param_groups)
 
 for epoch in range(hps.epochs):
-    if epoch==10:
-        for group in optimizer.param_groups:
-            group['lr'] *= 10.
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1

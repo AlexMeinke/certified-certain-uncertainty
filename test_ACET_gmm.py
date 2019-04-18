@@ -43,19 +43,21 @@ if hps.dataset=='MNIST':
     train_loader = dl.MNIST_train_loader
     noise_loader = dl.Noise_train_loader_MNIST
     test_loader = dl.MNIST_test_loader
+    dim = 784
 elif hps.dataset=='CIFAR10':
     base_model = resnet.ResNet50().to(device).to(device)
     train_loader = dl.CIFAR10_train_loader
     noise_loader = dl.Noise_train_loader_CIFAR10
     test_loader = dl.CIFAR10_test_loader
-    
+    dim = 3072
+
 noise_loader = dl.PrecomputeLoader(noise_loader)
 
 if hps.use_gmm:
     loading_string = hps.dataset+'_n'+str(hps.n) 
     gmm = torch.load('SavedModels/gmm_'+loading_string+'.pth')
     gmm.alpha = nn.Parameter(gmm.alpha)
-    model = models.RobustModel(base_model, gmm, hps.lam).to(device)
+    model = models.RobustModel(base_model, gmm, hps.lam, dim=dim).to(device)
     model.loglam.requires_grad = False
 else:
     model = base_model

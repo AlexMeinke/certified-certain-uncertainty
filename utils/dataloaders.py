@@ -9,6 +9,8 @@ import utils.preproc as pre
 batch_size = 100
 test_batch_size = 10
 
+download = False
+
 
 
 #MNIST
@@ -82,11 +84,15 @@ CIFAR10_test_loader = torch.utils.data.DataLoader(
         batch_size=test_batch_size, shuffle=False)
 
 
+#CIFAR100
 CIFAR100_test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR100('../data', train=False, transform=pre.MNIST_transform),
-        batch_size=10, shuffle=False)
+        batch_size=test_batch_size, shuffle=False)
 
-
+#SVHN
+SVHN_test_loader = torch.utils.data.DataLoader(
+        datasets.SVHN('../data', split='train', transform=transforms.ToTensor(), download=download),
+        batch_size=test_batch_size, shuffle=False)
 
 
 def PrecomputeLoader(loader, batch_size=100, shuffle=True):

@@ -42,10 +42,12 @@ if hps.dataset=='MNIST':
     base_model = models.LeNetMadry().to(device)
     train_loader = dl.MNIST_train_loader
     noise_loader = dl.Noise_train_loader_MNIST
+    test_loader = dl.MNIST_test_loader
 elif hps.dataset=='CIFAR10':
     base_model = resnet.ResNet50().to(device).to(device)
     train_loader = dl.CIFAR10_train_loader
     noise_loader = dl.Noise_train_loader_CIFAR10
+    test_loader = dl.CIFAR10_test_loader
     
 noise_loader = dl.PrecomputeLoader(noise_loader)
 
@@ -75,29 +77,20 @@ for epoch in range(hps.epochs):
         for group in optimizer.param_groups:
             group['lr'] *= .1
     error = tt.train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=hps.steps, verbose=False)
-    correct, ave_conf = tt.test(model, device, dl.MNIST_test_loader)
+    correct, ave_conf = tt.test(model, device, test_loader)
     writer.add_scalar('TestSet/TrainLoss', error, epoch)
     writer.add_scalar('TestSet/Correct', correct, epoch)
     writer.add_scalar('TestSet/Confidence', ave_conf, epoch)
     if (epoch)%5==0:
-        df = ev.evaluate_MNIST(model, device)
-        writer.add_scalar('AUROC/FMNIST', df['AUROC'].iloc[1], epoch)
-        writer.add_scalar('AUROC/EMNIST', df['AUROC'].iloc[2], epoch)
-        writer.add_scalar('AUROC/GrayCIFAR10', df['AUROC'].iloc[3], epoch)
-        writer.add_scalar('AUROC/Noise', df['AUROC'].iloc[4], epoch)
-        writer.add_scalar('AUROC/AdvNoise', df['AUROC'].iloc[5], epoch)
-        writer.add_scalar('AUROC/AdvSample', df['AUROC'].iloc[6], epoch)
-        
-        writer.add_scalar('MMC/FMNIST', df['MMC'].iloc[1], epoch)
-        writer.add_scalar('MMC/EMNIST', df['MMC'].iloc[2], epoch)
-        writer.add_scalar('MMC/GrayCIFAR10', df['MMC'].iloc[3], epoch)
-        writer.add_scalar('MMC/Noise', df['MMC'].iloc[4], epoch)
-        writer.add_scalar('MMC/AdvNoise', df['MMC'].iloc[5], epoch)
-        writer.add_scalar('MMC/AdvSample', df['MMC'].iloc[6], epoch)
-        
-torch.save(model, 'SavedModels/gmm_model_'+saving_string+ '.pth')
+        df = ev.evaluate(model, device, dataset=hps.dataset, writer=writer)
+
+
+if use_gmm:       
+    torch.save(model, 'SavedModels/gmm_model_'+saving_string+ '.pth')
+else:
+    torch.save(model, 'SavedModels/base_model_'+str(hps.dataset)+ '.pth')
 
 
 if hps.dataset=='MNIST':
-    df = ev.evaluate_MNIST(model, device)
+    df = ev.evaluate(model, device, dataset=hps.dataset)
     df.to_csv('results/gmm_model_joint'+saving_string+'.csv')

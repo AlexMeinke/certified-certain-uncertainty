@@ -84,7 +84,7 @@ for epoch in range(hps.epochs):
     writer.add_scalar('TestSet/Correct', correct, epoch)
     writer.add_scalar('TestSet/Confidence', ave_conf, epoch)
     if (epoch)%5==0:
-        df = ev.evaluate(model, device, dataset=hps.dataset, writer=writer)
+        df = ev.evaluate(model, device, dataset=hps.dataset, writer=writer, epoch=epoch)
 
 
 if use_gmm:       

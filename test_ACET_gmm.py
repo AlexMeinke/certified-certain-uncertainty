@@ -31,7 +31,7 @@ parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, CIFAR10
 parser.add_argument('--use_gmm', type=bool, default=True, help='use gmm in training or not')
 parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
 parser.add_argument('--steps', type=int, default=40, help='PGD steps in training ACET')
-
+parser.add_argument('--grad_vars', nargs='+', type=str, default=['mu','var','alpha'], help='variables in gmm that require grad')
 
 hps = parser.parse_args()
 
@@ -57,6 +57,9 @@ if hps.use_gmm:
     loading_string = hps.dataset+'_n'+str(hps.n) 
     gmm = torch.load('SavedModels/gmm_'+loading_string+'.pth')
     gmm.alpha = nn.Parameter(gmm.alpha)
+    gmm.mu.requires_grad = ('mu' in hps.grad_vars)
+    gmm.logvar.requires_grad = ('var' in hps.grad_vars)
+    gmm.alpha.requires_grad = ('alpha' in hps.grad_vars)
     model = models.RobustModel(base_model, gmm, hps.lam, dim=dim).to(device)
     model.loglam.requires_grad = False
 else:
@@ -78,9 +81,9 @@ for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
-    error = tt.train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=hps.steps, verbose=False)
+    trainloss = tt.train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=hps.steps, verbose=False)
     correct, ave_conf = tt.test(model, device, test_loader)
-    writer.add_scalar('TestSet/TrainLoss', error, epoch)
+    writer.add_scalar('TestSet/TrainLoss', trainloss, epoch)
     writer.add_scalar('TestSet/Correct', correct, epoch)
     writer.add_scalar('TestSet/Confidence', ave_conf, epoch)
     if (epoch)%5==0:

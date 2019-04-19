@@ -57,20 +57,3 @@ class AdversarialNoise(object):
 
 
 
-noise_transform = transforms.Compose([
-                            transforms.ToTensor(),
-                            PermutationNoise(),
-                            GaussianFilter(),
-                            ContrastRescaling()
-                       ])
-
-
-gray_transform = transforms.Compose([
-                            transforms.Resize(28),
-                            transforms.ToTensor(),
-                            Gray()
-                       ])
-
-MNIST_transform = transforms.ToTensor()
-
-EMNIST_transform = transforms.Compose([MNIST_transform, Transpose()])

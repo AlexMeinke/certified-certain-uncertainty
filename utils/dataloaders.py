@@ -6,115 +6,217 @@ import numpy as np
 import scipy.ndimage.filters as filters
 import utils.preproc as pre
 
-batch_size = 100
+train_batch_size = 100
 test_batch_size = 10
 
-download = False
+
+def MNIST(train=True, batch_size=None, augm_flag=True):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    transform_base = [transforms.ToTensor()]
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(28, padding=4),
+    ] + transform_base)
+    transform_test = transforms.Compose(transform_base)
+    transform = transform_train if (augm_flag and train) else transform_test
+    
+    dataset = datasets.MNIST('../data', train=train, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=train, num_workers=1)
+    return loader
 
 
 
-#MNIST
-MNIST_train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, transform=pre.MNIST_transform),
-        batch_size=batch_size, shuffle=True)
-MNIST_test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=pre.MNIST_transform),
-        batch_size=test_batch_size, shuffle=False)
+def EMNIST(train=False, batch_size=None, augm_flag=False):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    transform_base = [transforms.ToTensor(), pre.Transpose()] #EMNIST is rotated 90 degrees from MNIST
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(28, padding=4),
+    ] + transform_base)
+    transform_test = transforms.Compose(transform_base)
+    transform = transform_train if (augm_flag and train) else transform_test
+    
+    dataset = datasets.EMNIST('../data', split='letters', 
+                              train=train, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=train, num_workers=1)
+    return loader
 
 
-#EMNIST
-#EMNIST is rotated 90 degrees from MNIST
-EMNIST_train_loader = torch.utils.data.DataLoader(
-    datasets.EMNIST('../data', split='letters', train=True, 
-                    transform=pre.EMNIST_transform),
-    batch_size=batch_size, shuffle=True)
-
-EMNIST_test_loader = torch.utils.data.DataLoader(
-    datasets.EMNIST('../data', split='letters', train=False, 
-                    transform=pre.EMNIST_transform),
-    batch_size=test_batch_size, shuffle=True)
-
-
-#FMNIST
-
-FMNIST_train_loader = torch.utils.data.DataLoader(
-    datasets.FashionMNIST('../data', train=True, 
-                    transform=transforms.Compose([pre.MNIST_transform])),
-    batch_size=batch_size, shuffle=True)
-
-FMNIST_test_loader = torch.utils.data.DataLoader(
-    datasets.FashionMNIST('../data', train=True, 
-                    transform=transforms.Compose([pre.MNIST_transform])),
-    batch_size=test_batch_size, shuffle=True)
+def FMNIST(train=False, batch_size=None, augm_flag=False):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    transform_base = [transforms.ToTensor()]
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(28, padding=4),
+    ] + transform_base)
+    transform_test = transforms.Compose(transform_base)
+    transform = transform_train if (augm_flag and train) else transform_test
+    
+    dataset = datasets.FashionMNIST('../data', train=train, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=train, num_workers=1)
+    return loader
 
 
+def GrayCIFAR10(train=False, batch_size=None, augm_flag=False):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    transform_base = [transforms.Compose([
+                            transforms.Resize(28),
+                            transforms.ToTensor(),
+                            pre.Gray()
+                       ])]
+    transform_train = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(28, padding=4),
+        ] + transform_base)
+    
+    transform_test = transforms.Compose(transform_base)
+    transform = transform_train if (augm_flag and train) else transform_test
+    
+    dataset = datasets.CIFAR10('../data', train=train, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=train, num_workers=1)
+    return loader
 
 
-
-GrayCIFAR10_test_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=False, transform=pre.gray_transform),
-        batch_size=test_batch_size, shuffle=False)
-
-
-
-
-
-Noise_train_loader_MNIST = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, transform=pre.noise_transform),
-        batch_size=batch_size, shuffle=False)
-
-Noise_test_loader_MNIST = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, transform=pre.noise_transform),
-        batch_size=test_batch_size, shuffle=False)
-
-Noise_train_loader_CIFAR10 = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=True, transform=pre.noise_transform),
-        batch_size=batch_size, shuffle=False)
-
-Noise_test_loader_CIFAR10 = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=True, transform=pre.noise_transform),
-        batch_size=test_batch_size, shuffle=False)
+def Noise(dataset, train=True, batch_size=None):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    transform = transforms.Compose([
+                    transforms.ToTensor(),
+                    pre.PermutationNoise(),
+                    pre.GaussianFilter(),
+                    pre.ContrastRescaling()
+                    ])
+    if dataset=='MNIST':
+        dataset = datasets.MNIST('../data', train=train, transform=transform)
+    elif dataset=='CIFAR10':
+        dataset = datasets.CIFAR10('../data', train=train, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=False, num_workers=4)
+    loader = PrecomputeLoader(loader, batch_size=batch_size, shuffle=True)
+    return loader
 
 
-CIFAR10_train_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=True, transform=pre.MNIST_transform),
-        batch_size=batch_size, shuffle=True)
-CIFAR10_test_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=False, transform=pre.MNIST_transform),
-        batch_size=test_batch_size, shuffle=False)
+def CIFAR10(train=True, batch_size=None, augm_flag=True):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    transform_base = [transforms.ToTensor()]
+
+    transform_train = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32, padding=4),
+        ] + transform_base)
+    
+    transform_test = transforms.Compose(transform_base)
+    transform = transform_train if (augm_flag and train) else transform_test
+    
+    dataset = datasets.CIFAR10('../data', train=train, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=train, num_workers=1)
+    return loader
 
 
-#CIFAR100
-CIFAR100_test_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR100('../data', train=False, transform=pre.MNIST_transform),
-        batch_size=test_batch_size, shuffle=False)
+def CIFAR100(train=False, batch_size=None, augm_flag=False):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    transform_base = [transforms.ToTensor()]
 
-#SVHN
-SVHN_test_loader = torch.utils.data.DataLoader(
-        datasets.SVHN('../data', split='train', transform=transforms.ToTensor(), download=download),
-        batch_size=test_batch_size, shuffle=False)
+    transform_train = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32, padding=4),
+        ] + transform_base)
+    
+    transform_test = transforms.Compose(transform_base)
+    transform = transform_train if (augm_flag and train) else transform_test
+    
+    dataset = datasets.CIFAR100('../data', train=train, transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=train, num_workers=1)
+    return loader
+
+
+def SVHN(train=True, batch_size=None, augm_flag=True):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+            split = 'train'
+        else:
+            batch_size=test_batch_size
+            split = 'test'
+
+    transform_base = [transforms.ToTensor()]
+    transform_train = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+    ] + transform_base)
+    transform_test = transforms.Compose(transform_base)
+    transform = transform_train if (augm_flag and train) else transform_test
+    
+    dataset = datasets.SVHN('../data', split=split, transform=transform, download=True)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=train, num_workers=1)
+    return loader
+
 
 #LSUN classroom
-transform_base_LSUN = [transforms.Lambda(lambda x: np.array(x) / 255.0)]
-transform_base_LSUN = [transforms.ToTensor()]
-transform_test_LSUN = transforms.Compose([
+def LSUN_CR(train=False, batch_size=None, augm_flag=False):
+    if train:
+        print('Warning: Training set for LSUN not available')
+    if batch_size is None:
+        batch_size=test_batch_size
+
+    transform_base = [transforms.ToTensor()]
+    transform = transforms.Compose([
             transforms.Resize(size=(32, 32))
-        ] + transform_base_LSUN)
+        ] + transform_base)
+    data_dir = '../data/LSUN'
+    dataset = datasets.LSUN(data_dir, classes=['classroom_val'], transform=transform)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=False, num_workers=4)
+    return loader
 
-LSUN_test_loader = torch.utils.data.DataLoader(
-        datasets.LSUN('../data/LSUN', classes=['classroom_val'], transform=transform_test_LSUN),
-        batch_size=test_batch_size, shuffle=False)
 
 
-#imagenet
-n_test_imagenet = 30000
-dir_imagenet = '../data/imagenet/val/'
-test_dataset_imagenet = torch.utils.data.Subset(datasets.ImageFolder(dir_imagenet, transform=transforms.ToTensor()), 
+#LSUN classroom
+def ImageNetMinusCifar10(train=False, batch_size=None, augm_flag=False):
+    if train:
+        print('Warning: Training set for ImageNet not available')
+    if batch_size is None:
+        batch_size=test_batch_size
+    dir_imagenet = '../data/imagenet/val/'
+    n_test_imagenet = 30000
+
+    transform = transforms.ToTensor()
+    
+    dataset = torch.utils.data.Subset(datasets.ImageFolder(dir_imagenet, transform=transform), 
                                             np.random.permutation(range(n_test_imagenet))[:10000])
-
-imagenet_test_loader = torch.utils.data.DataLoader(
-        test_dataset_imagenet,
-        batch_size=test_batch_size, shuffle=False)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                         shuffle=False, num_workers=1)
+    return loader
 
 
 
@@ -129,3 +231,16 @@ def PrecomputeLoader(loader, batch_size=100, shuffle=True):
     
     train = data_utils.TensorDataset(X, L)
     return data_utils.DataLoader(train, batch_size=batch_size, shuffle=shuffle)
+
+
+datasets_dict = {'mnist':          MNIST,
+                 'fmnist':         FMNIST,
+                 'cifar10_gray':   GrayCIFAR10,
+                 'emnist':         EMNIST,
+                 'cifar10':        CIFAR10,
+                 'cifar100':       CIFAR100,
+                 'svhn':           SVHN,
+                 'lsun_classroom': LSUN_CR,
+                 'imagenet_minus_cifar10':  ImageNetMinusCifar10,
+                 'noise': Noise,
+                 }

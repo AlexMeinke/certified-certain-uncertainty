@@ -72,6 +72,7 @@ def log_CIFAR10(df, writer, epoch=0):
     writer.add_scalar('MMC/Noise', df['MMC'].iloc[4], epoch)
     writer.add_scalar('MMC/AdvNoise', df['MMC'].iloc[5], epoch)
     writer.add_scalar('MMC/AdvSample', df['MMC'].iloc[6], epoch)
+    return
     
 
 def evaluate(model, device, dataset='MNIST', writer=None, epoch=0):

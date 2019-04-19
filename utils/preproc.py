@@ -54,6 +54,3 @@ class AdversarialNoise(object):
                                        norm=20, num_of_it=40, 
                                        alpha=0.01, seed_images=data.unsqueeze(0))
         return perturbed.squeeze(0)
-
-
-

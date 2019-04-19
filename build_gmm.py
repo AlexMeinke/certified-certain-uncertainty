@@ -6,16 +6,19 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Define hyperparameters.')
 parser.add_argument('--n', type=int, default=1000, help='number of Gaussians.')
-parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, CIFAR10')
+parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, CIFAR10')
 
 hps = parser.parse_args()
 
 if hps.dataset=='MNIST':
     dim = 784
-    loader = dl.MNIST_train_loader
+    loader = dl.MNIST(train=True,augm_flag=False)
+elif hps.dataset=='SVHN':
+    dim = 3072
+    loader = dl.SVHN(train=True,augm_flag=False)
 elif hps.dataset=='CIFAR10':
     dim = 3072
-    loader = dl.CIFAR10_train_loader
+    loader = dl.CIFAR10(train=True,augm_flag=False)
 
 gmm = models.GMM(hps.n, dim)
 
@@ -25,6 +28,7 @@ for x, f in loader:
 X = torch.cat(X, 0)
 
 gmm.find_solution(X, initialize=True, iterate=True, use_kmeans=False)
+gmm.alpha = nn.Parameter(gmm.alpha)
 
 torch.save(gmm, 'SavedModels/gmm_'+hps.dataset+'_n'+str(hps.n)+'.pth')
 print('Done')

@@ -46,7 +46,7 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, step
 
         optimizer.zero_grad()
         output = model(data)
-        #noise = generate_adv_noise(model, 0.1, batch_size=train_loader.batch_size)
+
         adv_noise = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=steps)
         output_adv = model(adv_noise)
         

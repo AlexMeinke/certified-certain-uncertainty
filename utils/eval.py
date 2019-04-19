@@ -42,73 +42,71 @@ def evaluate_model(model, device, base_loader, loaders):
     df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUROC', 'FPR@95'])
     return df.set_index('DataSet')
 
-def log_MNIST(df, writer, epoch=0):
-    writer.add_scalar('AUROC/FMNIST', df['AUROC'].iloc[1], epoch)
-    writer.add_scalar('AUROC/EMNIST', df['AUROC'].iloc[2], epoch)
-    writer.add_scalar('AUROC/GrayCIFAR10', df['AUROC'].iloc[3], epoch)
-    writer.add_scalar('AUROC/Noise', df['AUROC'].iloc[4], epoch)
-    writer.add_scalar('AUROC/AdvNoise', df['AUROC'].iloc[5], epoch)
-    writer.add_scalar('AUROC/AdvSample', df['AUROC'].iloc[6], epoch)
-
-    writer.add_scalar('MMC/FMNIST', df['MMC'].iloc[1], epoch)
-    writer.add_scalar('MMC/EMNIST', df['MMC'].iloc[2], epoch)
-    writer.add_scalar('MMC/GrayCIFAR10', df['MMC'].iloc[3], epoch)
-    writer.add_scalar('MMC/Noise', df['MMC'].iloc[4], epoch)
-    writer.add_scalar('MMC/AdvNoise', df['MMC'].iloc[5], epoch)
-    writer.add_scalar('MMC/AdvSample', df['MMC'].iloc[6], epoch)
-    return
-    
-def log_CIFAR10(df, writer, epoch=0):
-    writer.add_scalar('AUROC/SVHN', df['AUROC'].iloc[1], epoch)
-    writer.add_scalar('AUROC/CIFAR100', df['AUROC'].iloc[2], epoch)
-    writer.add_scalar('AUROC/LSUN CR', df['AUROC'].iloc[3], epoch)
-    writer.add_scalar('AUROC/Noise', df['AUROC'].iloc[4], epoch)
-    writer.add_scalar('AUROC/AdvNoise', df['AUROC'].iloc[5], epoch)
-    writer.add_scalar('AUROC/AdvSample', df['AUROC'].iloc[6], epoch)
-
-    writer.add_scalar('MMC/SVHN', df['MMC'].iloc[1], epoch)
-    writer.add_scalar('MMC/CIFAR100', df['MMC'].iloc[2], epoch)
-    writer.add_scalar('MMC/LSUN CR', df['MMC'].iloc[3], epoch)
-    writer.add_scalar('MMC/Noise', df['MMC'].iloc[4], epoch)
-    writer.add_scalar('MMC/AdvNoise', df['MMC'].iloc[5], epoch)
-    writer.add_scalar('MMC/AdvSample', df['MMC'].iloc[6], epoch)
-    return
-    
-
-def evaluate(model, device, dataset='MNIST', writer=None, epoch=0):
+def write_log(df, writer, dataset, epoch=0):
     if dataset=='MNIST':
-        AdversarialNoiseLoader = adv.create_adv_noise_loader(model, dl.Noise_test_loader_MNIST, device)
-        AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.MNIST_test_loader, device)
+        writer.add_scalar('AUROC/FMNIST', df['AUROC'].iloc[1], epoch)
+        writer.add_scalar('AUROC/EMNIST', df['AUROC'].iloc[2], epoch)
+        writer.add_scalar('AUROC/GrayCIFAR10', df['AUROC'].iloc[3], epoch)
+        writer.add_scalar('AUROC/Noise', df['AUROC'].iloc[4], epoch)
+        writer.add_scalar('AUROC/AdvNoise', df['AUROC'].iloc[5], epoch)
+        writer.add_scalar('AUROC/AdvSample', df['AUROC'].iloc[6], epoch)
 
-        loaders = (
-        [('FMNIST', dl.FMNIST_test_loader), 
-         ('EMNIST', dl.EMNIST_test_loader),
-         ('GrayCIFAR10', dl.GrayCIFAR10_test_loader),
-         ('Noise', dl.Noise_test_loader_MNIST),
+        writer.add_scalar('MMC/FMNIST', df['MMC'].iloc[1], epoch)
+        writer.add_scalar('MMC/EMNIST', df['MMC'].iloc[2], epoch)
+        writer.add_scalar('MMC/GrayCIFAR10', df['MMC'].iloc[3], epoch)
+        writer.add_scalar('MMC/Noise', df['MMC'].iloc[4], epoch)
+        writer.add_scalar('MMC/AdvNoise', df['MMC'].iloc[5], epoch)
+        writer.add_scalar('MMC/AdvSample', df['MMC'].iloc[6], epoch)
+        return
+    
+    if dataset=='SVHN':
+        writer.add_scalar('AUROC/CIFAR10', df['AUROC'].iloc[1], epoch)
+        writer.add_scalar('AUROC/CIFAR100', df['AUROC'].iloc[2], epoch)
+        writer.add_scalar('AUROC/LSUN CR', df['AUROC'].iloc[3], epoch)
+        writer.add_scalar('AUROC/ImageNet-', df['AUROC'].iloc[4], epoch)
+        writer.add_scalar('AUROC/Noise', df['AUROC'].iloc[5], epoch)
+        writer.add_scalar('AUROC/AdvNoise', df['AUROC'].iloc[6], epoch)
+        writer.add_scalar('AUROC/AdvSample', df['AUROC'].iloc[7], epoch)
+
+        writer.add_scalar('MMC/CIFAR10', df['MMC'].iloc[1], epoch)
+        writer.add_scalar('MMC/CIFAR100', df['MMC'].iloc[2], epoch)
+        writer.add_scalar('MMC/LSUN CR', df['MMC'].iloc[3], epoch)
+        writer.add_scalar('MMC/ImageNet-', df['MMC'].iloc[4], epoch)
+        writer.add_scalar('MMC/Noise', df['MMC'].iloc[5], epoch)
+        writer.add_scalar('MMC/AdvNoise', df['MMC'].iloc[6], epoch)
+        writer.add_scalar('MMC/AdvSample', df['MMC'].iloc[7], epoch)
+        return
+    
+    if dataset=='CIFAR10':
+        writer.add_scalar('AUROC/SVHN', df['AUROC'].iloc[1], epoch)
+        writer.add_scalar('AUROC/CIFAR100', df['AUROC'].iloc[2], epoch)
+        writer.add_scalar('AUROC/LSUN CR', df['AUROC'].iloc[3], epoch)
+        writer.add_scalar('AUROC/ImageNet-', df['AUROC'].iloc[4], epoch)
+        writer.add_scalar('AUROC/Noise', df['AUROC'].iloc[5], epoch)
+        writer.add_scalar('AUROC/AdvNoise', df['AUROC'].iloc[6], epoch)
+        writer.add_scalar('AUROC/AdvSample', df['AUROC'].iloc[7], epoch)
+
+        writer.add_scalar('MMC/SVHN', df['MMC'].iloc[1], epoch)
+        writer.add_scalar('MMC/CIFAR100', df['MMC'].iloc[2], epoch)
+        writer.add_scalar('MMC/LSUN CR', df['MMC'].iloc[3], epoch)
+        writer.add_scalar('MMC/ImageNet-', df['MMC'].iloc[4], epoch)
+        writer.add_scalar('MMC/Noise', df['MMC'].iloc[5], epoch)
+        writer.add_scalar('MMC/AdvNoise', df['MMC'].iloc[6], epoch)
+        writer.add_scalar('MMC/AdvSample', df['MMC'].iloc[7], epoch)
+        return
+    
+
+def evaluate(model, device, dataset, loaders, writer=None, epoch=0):
+    NoiseLoader = loaders[-1][1]
+    AdversarialNoiseLoader = adv.create_adv_noise_loader(model, NoiseLoader, device)
+    AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.datasets_dict[dataset](train=False), device)
+    loaders += (
+        [
          ('Adv. Noise', AdversarialNoiseLoader ),
          ('Adv. Sample', AdversarialSampleLoader)]
         )
-
-        df = evaluate_model(model, device, dl.MNIST_test_loader, loaders)
-        
-        if writer is not None:
-            log_MNIST(df, writer, epoch)
-
-    elif dataset=='CIFAR10':
-        AdversarialNoiseLoader = adv.create_adv_noise_loader(model, dl.Noise_test_loader_CIFAR10, device)
-        AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.CIFAR10_test_loader, device)
-
-        loaders = (
-        [('SVHN', dl.SVHN_test_loader), 
-         ('CIFAR100', dl.CIFAR100_test_loader),
-         ('LSUN CR', dl.LSUN_test_loader),
-         ('Noise', dl.Noise_test_loader_CIFAR10),
-         ('Adv. Noise', AdversarialNoiseLoader ),
-         ('Adv. Sample', AdversarialSampleLoader)]
-        )
-
-        df = evaluate_model(model, device, dl.CIFAR10_test_loader, loaders)
+    df = evaluate_model(model, device, dl.datasets_dict[dataset](train=False), loaders)
                 
-        if writer is not None:
-            log_CIFAR10(df, writer, epoch)
+    if writer is not None:
+        write_log(df, writer, dataset, epoch)
     return df

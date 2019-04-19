@@ -108,6 +108,8 @@ def Noise(dataset, train=True, batch_size=None):
                     ])
     if dataset=='MNIST':
         dataset = datasets.MNIST('../data', train=train, transform=transform)
+    elif dataset=='SVHN':
+        dataset = datasets.SVHN('../data', split='train' if train else 'test', transform=transform)
     elif dataset=='CIFAR10':
         dataset = datasets.CIFAR10('../data', train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
@@ -201,7 +203,7 @@ def LSUN_CR(train=False, batch_size=None, augm_flag=False):
 
 
 
-#LSUN classroom
+
 def ImageNetMinusCifar10(train=False, batch_size=None, augm_flag=False):
     if train:
         print('Warning: Training set for ImageNet not available')

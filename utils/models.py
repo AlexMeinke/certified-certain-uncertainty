@@ -119,11 +119,11 @@ class MixtureModel(nn.Module):
         self.mu.data = (post[:,:,None]*X[None,:,:]).sum(dim=1) / Nk[:,None]
         temp = log_post + ((X[None,:,:]-self.mu[:,None,:])**2).sum(dim=-1).log()
         self.logvar.data = (- Nk.log() 
-                       + torch.logsumexp(temp, dim=1, keepdim=False))
+                            + torch.logsumexp(temp, dim=1, keepdim=False))
         
         self.alpha = nn.Parameter( (Nk/Nk.sum()).log() )
         
-    def find_solution(self, X, initialize=True, iterate=True, use_kmeans=True):
+    def find_solution(self, X, initialize=True, iterate=True, use_kmeans=True, verbose=False):
         assert X.device==self.mu.device, 'Data stored on ' + str(X.device) + ' but model on ' + str(self.mu.device)
         
         with torch.no_grad():
@@ -149,7 +149,7 @@ class MixtureModel(nn.Module):
                 self.logvarbound = (X.var() / m).log()
                 
             if iterate:
-                for _ in range(500):
+                for i in range(500):
                     mu_prev = self.mu
                     logvar_prev = self.logvar
                     alpha_prev = self.alpha
@@ -159,7 +159,8 @@ class MixtureModel(nn.Module):
                     delta = torch.stack( ((mu_prev-self.mu).abs().max(),
                                 (logvar_prev-self.logvar).abs().max(),
                                 (alpha_prev-self.alpha).abs().max()) ).max()
-
+                    if verbose:
+                        print('Iteration: '+ str(i)+'\t delta: '+str(delta.item()))
                     if delta<10e-6:
                         break
 
@@ -182,13 +183,13 @@ class GMM(MixtureModel):
         """
         a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
         b = self.logvar[:,None].exp()
-        return (self.alpha[:,None] 
-                - ( a/b ) )
+        return (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
+                - .5*( a/b ) )
         
     def calculate_bound(self, L):
         var = self.logvar[:,None].exp()
-        bound = (self.alpha[:,None] 
-                - ( L**2/var ) )
+        bound = (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
+                - .5* ( L**2/(2*var) ) )
         return torch.logsumexp(bound.squeeze(),dim=0)
                     
 

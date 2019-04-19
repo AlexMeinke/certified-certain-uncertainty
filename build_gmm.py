@@ -7,6 +7,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Define hyperparameters.')
 parser.add_argument('--n', type=int, default=1000, help='number of Gaussians.')
 parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, CIFAR10')
+parser.add_argument('--verbose', type=bool, default=False, help='whether to print current iteration')
 
 hps = parser.parse_args()
 
@@ -26,8 +27,11 @@ X = []
 for x, f in loader:
     X.append(x.view(-1,dim))
 X = torch.cat(X, 0)
+    
+if hps.dataset=='SVHN':
+    X = X[:50000] #needed to keep memory of distance matrix below 800 GB
 
-gmm.find_solution(X, initialize=True, iterate=True, use_kmeans=False)
+gmm.find_solution(X, initialize=True, iterate=True, use_kmeans=False, verbose=verbose)
 gmm.alpha = nn.Parameter(gmm.alpha)
 
 torch.save(gmm, 'SavedModels/gmm_'+hps.dataset+'_n'+str(hps.n)+'.pth')

@@ -25,7 +25,7 @@ def MNIST(train=True, batch_size=None, augm_flag=True):
     
     dataset = datasets.MNIST('../data', train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
-                                         shuffle=train, num_workers=1)
+                                         shuffle=train, num_workers=4)
     return loader
 
 
@@ -136,7 +136,7 @@ def CIFAR10(train=True, batch_size=None, augm_flag=True):
     
     dataset = datasets.CIFAR10('../data', train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
-                                         shuffle=train, num_workers=1)
+                                         shuffle=train, num_workers=4)
     return loader
 
 
@@ -180,7 +180,7 @@ def SVHN(train=True, batch_size=None, augm_flag=True):
     
     dataset = datasets.SVHN('../data', split=split, transform=transform, download=True)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
-                                         shuffle=train, num_workers=1)
+                                         shuffle=train, num_workers=4)
     return loader
 
 
@@ -235,13 +235,13 @@ def PrecomputeLoader(loader, batch_size=100, shuffle=True):
     return data_utils.DataLoader(train, batch_size=batch_size, shuffle=shuffle)
 
 
-datasets_dict = {'mnist':          MNIST,
+datasets_dict = {'MNIST':          MNIST,
                  'fmnist':         FMNIST,
                  'cifar10_gray':   GrayCIFAR10,
                  'emnist':         EMNIST,
-                 'cifar10':        CIFAR10,
+                 'CIFAR10':        CIFAR10,
                  'cifar100':       CIFAR100,
-                 'svhn':           SVHN,
+                 'SVHN':           SVHN,
                  'lsun_classroom': LSUN_CR,
                  'imagenet_minus_cifar10':  ImageNetMinusCifar10,
                  'noise': Noise,

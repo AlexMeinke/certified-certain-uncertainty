@@ -100,12 +100,12 @@ def evaluate(model, device, dataset, loaders, writer=None, epoch=0):
     NoiseLoader = loaders[-1][1]
     AdversarialNoiseLoader = adv.create_adv_noise_loader(model, NoiseLoader, device)
     AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.datasets_dict[dataset](train=False), device)
-    loaders += (
+    temp = loaders + (
         [
          ('Adv. Noise', AdversarialNoiseLoader ),
          ('Adv. Sample', AdversarialSampleLoader)]
         )
-    df = evaluate_model(model, device, dl.datasets_dict[dataset](train=False), loaders)
+    df = evaluate_model(model, device, dl.datasets_dict[dataset](train=False), temp)
                 
     if writer is not None:
         write_log(df, writer, dataset, epoch)

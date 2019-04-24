@@ -1,5 +1,6 @@
 import utils.models as models
 import utils.dataloaders as dl
+import resnet
 
 class MNIST_params():
     def __init__(self, augm_flag=True):

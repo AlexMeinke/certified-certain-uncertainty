@@ -54,7 +54,7 @@ elif hps.alg=='scikit':
     gmm = models.GMM(hps.n, dim, mu=mu, logvar=logvar, alpha=alpha)
 else:    
     raise ValueError("Invalid algorithm "+ str(hps.alg))
-saving_string = ('SavedModels/gmm_' + hps.dataset
+saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_n' + str(hps.n)
                  +'_data_used' + str(hps.data_used)
                  +'_augm_flag' + str(hps.augm_flag)

@@ -1,10 +1,12 @@
 import torch
 import numpy as np
 import pandas as pd
+from sklearn.metrics import roc_auc_score
+
 import utils.adversarial as adv
 import utils.dataloaders as dl
 
-def test_metrics(model, device, in_loader, out_loader, thresholds=torch.linspace(.1, 1., 20000)):
+def test_metrics(model, device, in_loader, out_loader):
     thresholds=thresholds.to(device)
     with torch.no_grad():
         model.eval()
@@ -24,11 +26,13 @@ def test_metrics(model, device, in_loader, out_loader, thresholds=torch.linspace
         conf_in = torch.cat(conf_in)
         conf_out = torch.cat(conf_out)
         
-        tp = (conf_in[:,None] > thresholds[None,:]).sum(0).float()/(count*in_loader.batch_size)
-        fp = (conf_out[:,None] > thresholds[None,:]).sum(0).float()/(count*out_loader.batch_size)
+        y_true = torch.cat([torch.ones_like(conf_in), 
+                            torch.zeros_like(conf_out)]).numpy()
+        y_scores = torch.cat([conf_in, 
+                              conf_out]).numpy()
         
         mmc = conf_out.mean().item()
-        auroc = -np.trapz(tp.cpu().numpy(), x=fp.cpu().numpy())
+        auroc = roc_auc_score(y_true, y_scores)
         fp95 = ((conf_out > 0.95).sum().float()/(count*out_loader.batch_size)).item()
         return mmc, auroc, fp95
     

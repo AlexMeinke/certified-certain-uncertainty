@@ -12,6 +12,7 @@ class MNIST_params():
              ('EMNIST', dl.EMNIST(train=False)),
              ('GrayCIFAR10', dl.GrayCIFAR10(train=False)),
              ('Noise', dl.Noise(dataset='MNIST'))]
+        self.data_used = 60000
 
 class SVHN_params():
     def __init__(self, augm_flag=True):
@@ -24,6 +25,7 @@ class SVHN_params():
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN'))]
+        self.data_used = 50000
         
 class CIFAR10_params():
     def __init__(self, augm_flag=True):
@@ -36,6 +38,7 @@ class CIFAR10_params():
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN'))]
+        self.data_used = 60000
         
 params_dict = {'MNIST':          MNIST_params,
                'SVHN':           SVHN_params,

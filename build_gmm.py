@@ -24,7 +24,7 @@ if hps.dataset=='MNIST':
 elif hps.dataset=='SVHN':
     dim = 3072
     loader = dl.SVHN(train=True,augm_flag=hps.augm_flag)
-    hps.data_used = 5000 if hps.data_used is None else hps.data_used
+    hps.data_used = 50000 if hps.data_used is None else hps.data_used
 elif hps.dataset=='CIFAR10':
     dim = 3072
     loader = dl.CIFAR10(train=True,augm_flag=hps.augm_flag)
@@ -54,11 +54,12 @@ elif hps.alg=='scikit':
     gmm = models.GMM(hps.n, dim, mu=mu, logvar=logvar, alpha=alpha)
 else:    
     raise ValueError("Invalid algorithm "+ str(hps.alg))
-saving_string = 'SavedModels/gmm_'+hps.dataset+'_n'+str(hps.n)+'_data_used'+str(hps.data_used)
+saving_string = ('SavedModels/gmm_' + hps.dataset
+                 +'_n' + str(hps.n)
+                 +'_data_used' + str(hps.data_used)
+                 +'_augm_flag' + str(hps.augm_flag)
+                 +'_alg_'+str(hps.alg))
 
-saving_string += '_' + hps.alg
-if hps.augm_flag:
-    saving_string += '_data_augm'
 saving_string += '.pth'
 
 torch.save(gmm, saving_string)

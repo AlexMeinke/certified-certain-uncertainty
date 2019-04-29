@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import utils.adversarial as adv
 
-def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, verbose=True):
+def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=True):
     # noise_loader is useless but this way all training functions have the same format
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -20,7 +20,7 @@ def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, ver
                 100. * batch_idx / len(train_loader), loss.item()))
         return loss
             
-def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, verbose=True):
+def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=True):
     model.train()
     for ((batch_idx, (data, target)), (_, (noise, _))) in zip(enumerate(train_loader),enumerate(noise_loader)):
         data, target = data.to(device), target.to(device)
@@ -68,7 +68,7 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, step
 def test(model, device, test_loader, min_conf=.1):
     model.eval()
     test_loss = 0
-    correct = 0
+    correct = 0.
     av_conf = 0
     with torch.no_grad():
         for data, target in test_loader:
@@ -82,6 +82,7 @@ def test(model, device, test_loader, min_conf=.1):
             
     test_loss /= len(test_loader.dataset)
     av_conf /= len(test_loader.dataset)
+    correct /= len(test_loader.dataset)
     
     return correct, av_conf, test_loss
 

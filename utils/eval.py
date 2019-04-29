@@ -7,7 +7,6 @@ import utils.adversarial as adv
 import utils.dataloaders as dl
 
 def test_metrics(model, device, in_loader, out_loader):
-    thresholds=thresholds.to(device)
     with torch.no_grad():
         model.eval()
         conf_in = []
@@ -27,9 +26,9 @@ def test_metrics(model, device, in_loader, out_loader):
         conf_out = torch.cat(conf_out)
         
         y_true = torch.cat([torch.ones_like(conf_in), 
-                            torch.zeros_like(conf_out)]).numpy()
+                            torch.zeros_like(conf_out)]).cpu().numpy()
         y_scores = torch.cat([conf_in, 
-                              conf_out]).numpy()
+                              conf_out]).cpu().numpy()
         
         mmc = conf_out.mean().item()
         auroc = roc_auc_score(y_true, y_scores)

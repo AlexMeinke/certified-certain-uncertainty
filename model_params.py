@@ -38,7 +38,7 @@ class CIFAR10_params():
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN'))]
-        self.data_used = 60000
+        self.data_used = 50000
         
 params_dict = {'MNIST':          MNIST_params,
                'SVHN':           SVHN_params,

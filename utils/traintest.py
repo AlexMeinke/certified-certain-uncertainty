@@ -1,27 +1,42 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import utils.adversarial as adv
 
 def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=True):
     # noise_loader is useless but this way all training functions have the same format
+    criterion = nn.NLLLoss()
     model.train()
+    
+    train_loss = 0
+    correct = 0
+    
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
 
         optimizer.zero_grad()
         output = model(data)
 
-        loss = F.nll_loss(output, target)
+        loss = criterion(output, target)
         loss.backward()
         optimizer.step()
+        
+        train_loss += loss.item()
+        _, predicted = output.max(1)
+        correct += predicted.eq(target).sum().item()
         if batch_idx % 100 == 0 and verbose:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-        return loss
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
             
 def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=True):
+    criterion = nn.NLLLoss()
     model.train()
+    
+    train_loss = 0
+    correct = 0
+    
     for ((batch_idx, (data, target)), (_, (noise, _))) in zip(enumerate(train_loader),enumerate(noise_loader)):
         data, target = data.to(device), target.to(device)
         noise = noise.to(device)
@@ -31,18 +46,27 @@ def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, step
         
         output_adv = model(noise)
         
-        loss = F.nll_loss(output, target) - output_adv.sum()/(10*train_loader.batch_size)
+        loss = F.nll_loss(output, target) - output_adv.sum()/(10*noise_loader.batch_size)
         loss.backward()
         optimizer.step()
+        
+        train_loss += loss.item()
+        _, predicted = output.max(1)
+        correct += predicted.eq(target).sum().item()
         if batch_idx % 100 == 0 and verbose:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-        return loss
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
             
 
 def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=True):
+    criterion = nn.NLLLoss()
     model.train()
+    
+    train_loss = 0
+    correct = 0
+    
     for ((batch_idx, (data, target)), (_, (noise, _))) in zip(enumerate(train_loader),enumerate(noise_loader)):
         data, target = data.to(device), target.to(device)
         noise = noise.to(device)
@@ -53,16 +77,19 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, step
         adv_noise = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=steps)
         output_adv = model(adv_noise)
         
-        loss = F.nll_loss(output, target) - output_adv.sum()/(10*train_loader.batch_size)
+        loss = F.nll_loss(output, target) - output_adv.sum()/(10*noise_loader.batch_size)
         loss.backward()
 
         optimizer.step()
-
+        
+        train_loss += loss.item()
+        _, predicted = output.max(1)
+        correct += predicted.eq(target).sum().item()
         if batch_idx % 100 == 0 and verbose:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-    return loss
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
             
 
 def test(model, device, test_loader, min_conf=.1):

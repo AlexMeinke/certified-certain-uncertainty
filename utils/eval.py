@@ -38,7 +38,7 @@ def test_metrics(model, device, in_loader, out_loader):
 def evaluate_model(model, device, base_loader, loaders):
     metrics = []
     mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
-    metrics.append(['MNIST', mmc, '-', '-'])
+    metrics.append(['orig', mmc, '-', '-'])
     for (name, data_loader) in loaders:
         mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
         metrics.append([name, mmc, auroc, fp95])
@@ -101,8 +101,8 @@ def write_log(df, writer, dataset, epoch=0):
 
 def evaluate(model, device, dataset, loaders, writer=None, epoch=0):
     NoiseLoader = loaders[-1][1]
-    AdversarialNoiseLoader = adv.create_adv_noise_loader(model, NoiseLoader, device)
-    AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.datasets_dict[dataset](train=False), device)
+    AdversarialNoiseLoader = adv.create_adv_noise_loader(model, NoiseLoader, device, batches=5)
+    AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.datasets_dict[dataset](train=False), device, batches=5)
     temp = loaders + (
         [
          ('Adv. Noise', AdversarialNoiseLoader ),

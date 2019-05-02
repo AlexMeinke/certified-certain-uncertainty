@@ -4,6 +4,7 @@ import utils.models as models
 import utils.dataloaders as dl
 from sklearn import mixture
 import numpy as np
+import utils.gmm_helpers as gmm_helpers
 
 import argparse
 
@@ -60,7 +61,10 @@ saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_augm_flag' + str(hps.augm_flag)
                  +'_alg_'+str(hps.alg))
 
-saving_string += '.pth'
 
-torch.save(gmm, saving_string)
+torch.save(gmm, saving_string+'.pth')
+
+gmm = gmm_helpers.rescale_gmm(gmm, loader)
+saving_string += '_rescaled'
+torch.save(gmm, saving_string+'.pth')
 print('Done')

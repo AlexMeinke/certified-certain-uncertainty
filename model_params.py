@@ -16,7 +16,7 @@ class MNIST_params():
 
 class SVHN_params():
     def __init__(self, augm_flag=True):
-        self.base_model = resnet.ResNet50()
+        self.base_model = resnet.ResNet18()
         self.train_loader = dl.SVHN(train=True, augm_flag=augm_flag)
         self.test_loader = dl.SVHN(train=False)
         self.dim = 3072
@@ -29,7 +29,7 @@ class SVHN_params():
         
 class CIFAR10_params():
     def __init__(self, augm_flag=True):
-        self.base_model = resnet.ResNet50()
+        self.base_model = resnet.ResNet18()
         self.train_loader = dl.CIFAR10(train=True, augm_flag=augm_flag)
         self.test_loader = dl.CIFAR10(train=False)
         self.dim = 3072

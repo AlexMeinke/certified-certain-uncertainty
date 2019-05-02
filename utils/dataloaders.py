@@ -6,8 +6,8 @@ import numpy as np
 import scipy.ndimage.filters as filters
 import utils.preproc as pre
 
-train_batch_size = 100
-test_batch_size = 10
+train_batch_size = 128
+test_batch_size = 100
 
 
 def MNIST(train=True, batch_size=None, augm_flag=True):

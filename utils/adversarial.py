@@ -31,7 +31,6 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
             prev_data = data
             prev_grad = grad
             
-
             data += alpha*grad
             delta = torch.clamp(data-orig_data, -epsilon, epsilon)
             data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
@@ -66,7 +65,6 @@ def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=
             prev_data = data
             prev_grad = grad
             
-
             data += alpha*grad
             delta = torch.clamp(data-orig_data, -epsilon, epsilon)
             data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()

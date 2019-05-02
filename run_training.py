@@ -36,7 +36,7 @@ parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, C
 parser.add_argument('--use_gmm', type=bool, default=False, help='use gmm in training or not')
 parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
 parser.add_argument('--steps', type=int, default=40, help='PGD steps in training ACET')
-parser.add_argument('--grad_vars', nargs='+', type=str, default=['mu','var','alpha'], 
+parser.add_argument('--grad_vars', nargs='+', type=str, default=['mu'], 
                     help='variables in gmm that require grad')
 parser.add_argument('--augm_flag', type=bool, default=False, help='whether to use data augmentation')
 parser.add_argument('--gmm_path', type=str, default=None, 
@@ -60,14 +60,14 @@ loading_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_n' + str(hps.n)
                  +'_data_used' + str(model_params.data_used)
                  +'_augm_flag' + str(hps.augm_flag)
-                 +'_alg_'+'scikit'
+                 +'_alg_'+'scikit'+rescaled
                  +'.pth') if hps.gmm_path is None else hps.gmm_path
 
 if hps.use_gmm:
-    gmm = torch.load(loading_string) 
+    gmm = torch.load(loading_string)
     if hps.lam==-1000000.:
-        hps.lam = gmm_helpers.find_lam(gmm, hps.percentile, model_params.train_loader)
-        print(hps.lam)
+        hps.lam = gmm_helpers.find_lam(gmm, hps.percentile, model_params.cali_loader)
+        print('[INFO] chose loglambda as ' + str(hps.lam))
         
     saving_string = ('gmm'+ rescaled + hps.dataset
                      +'_lam' + str(hps.lam)

@@ -6,10 +6,12 @@ import utils.dataloaders as dl
 
 def find_lam(gmm, percentile, dataloader):
     X = []
-    for x, f in dataloader:
+    for i, (x, _) in enumerate(dataloader):
+        if i>50:
+            break;
         X.append(torch.logsumexp(gmm(x.view(-1,gmm.D)),0).detach() )
     X = torch.cat(X, 0)
-    lam = np.percentile(X.numpy(), .01)
+    lam = np.percentile(X.numpy(), percentile)
     return lam
 
 def rescale_gmm(gmm, loader):

@@ -6,6 +6,7 @@ class MNIST_params():
     def __init__(self, augm_flag=True):
         self.base_model = models.LeNetMadry()
         self.train_loader = dl.MNIST(train=True, augm_flag=augm_flag)
+        self.cali_loader = dl.MNIST(train=True, augm_flag=False)
         self.test_loader = dl.MNIST(train=False)
         self.dim = 784
         self.loaders = [('FMNIST', dl.FMNIST(train=False)), 
@@ -18,6 +19,7 @@ class SVHN_params():
     def __init__(self, augm_flag=True):
         self.base_model = resnet.ResNet18()
         self.train_loader = dl.SVHN(train=True, augm_flag=augm_flag)
+        self.cali_loader = dl.SVHN(train=True, augm_flag=False)
         self.test_loader = dl.SVHN(train=False)
         self.dim = 3072
         self.loaders = [('CIFAR10', dl.CIFAR10(train=False)), 
@@ -31,9 +33,10 @@ class CIFAR10_params():
     def __init__(self, augm_flag=True):
         self.base_model = resnet.ResNet18()
         self.train_loader = dl.CIFAR10(train=True, augm_flag=augm_flag)
+        self.cali_loader = dl.CIFAR10(train=True, augm_flag=False)
         self.test_loader = dl.CIFAR10(train=False)
         self.dim = 3072
-        self.loaders = [('CIFAR10', dl.SVHN(train=False)), 
+        self.loaders = [('SVHN', dl.SVHN(train=False)), 
              ('CIFAR100', dl.CIFAR100(train=False)),
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),

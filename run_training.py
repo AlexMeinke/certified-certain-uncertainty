@@ -122,14 +122,11 @@ for epoch in range(hps.epochs):
     if (epoch%10)==5:
         torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
     
-    trainloss = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
+    trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
                                   model_params.loaders[-1][1], 
                                   optimizer, epoch, epsilon=model_params.epsilon,
                                   steps=hps.steps, verbose=hps.verbose)
     
-    trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
-                                                          model_params.loaders[-1][1], optimizer, 
-                                                          epoch, verbose=False)
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)

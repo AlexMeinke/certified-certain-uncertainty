@@ -70,15 +70,20 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, step
     for ((batch_idx, (data, target)), (_, (noise, _))) in zip(enumerate(train_loader),enumerate(noise_loader)):
         data, target = data.to(device), target.to(device)
         noise = noise.to(device)
+        noise = torch.rand(128,3,32,32, device=device)
 
-        optimizer.zero_grad()
+        
         output = model(data)
 
         adv_noise = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=steps)
+        optimizer.zero_grad()
+        model.train()
         output_adv = model(adv_noise)
         
-        loss = F.nll_loss(output, target) - output_adv.sum()/(10*noise_loader.batch_size)
+        loss = criterion(output, target) - output_adv.sum()/(10*noise_loader.batch_size)
+        loss = criterion(output, target)
         loss.backward()
+
 
         optimizer.step()
         

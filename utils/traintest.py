@@ -46,7 +46,7 @@ def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, step
         
         output_adv = model(noise)
         
-        loss = F.nll_loss(output, target) - output_adv.max(1)[0]/(noise_loader.batch_size)
+        loss = F.nll_loss(output, target) - output_adv.max(1)[0].sum()/(noise_loader.batch_size)
         loss.backward()
         optimizer.step()
         
@@ -79,7 +79,8 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, step
         model.train()
         output_adv = model(adv_noise)
         
-        loss = criterion(output, target) - output_adv.max(1)[0]/(noise_loader.batch_size)
+
+        loss = criterion(output, target) - output_adv.max(1)[0].sum()/(noise_loader.batch_size)
         loss.backward()
         optimizer.step()
         

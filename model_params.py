@@ -1,6 +1,6 @@
 import utils.models as models
 import utils.dataloaders as dl
-import resnet
+import utils.resnet_orig as resnet
 
 class MNIST_params():
     def __init__(self, augm_flag=True):
@@ -14,6 +14,7 @@ class MNIST_params():
              ('GrayCIFAR10', dl.GrayCIFAR10(train=False)),
              ('Noise', dl.Noise(dataset='MNIST'))]
         self.data_used = 60000
+        self.epsilon = 0.3
 
 class SVHN_params():
     def __init__(self, augm_flag=True):
@@ -28,6 +29,7 @@ class SVHN_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN'))]
         self.data_used = 50000
+        self.epsilon = 0.1
         
 class CIFAR10_params():
     def __init__(self, augm_flag=True):
@@ -42,6 +44,7 @@ class CIFAR10_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN'))]
         self.data_used = 50000
+        self.epsilon = 0.1
         
 params_dict = {'MNIST':          MNIST_params,
                'SVHN':           SVHN_params,

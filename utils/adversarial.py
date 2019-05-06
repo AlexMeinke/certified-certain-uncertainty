@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.utils.data as data_utils
 
+
 def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
     
     with torch.no_grad():
@@ -14,6 +15,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
 
         prev_losses = -100000.*torch.ones(batch_size, device=device)
         prev_grad = torch.zeros_like(seed, device=device)
+        
     for _ in range(steps):
         with torch.enable_grad():
             y = model(data)
@@ -34,6 +36,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
             data += alpha*grad
             delta = torch.clamp(data-orig_data, -epsilon, epsilon)
             data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
+            
     return data.detach()
 
 def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.001):

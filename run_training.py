@@ -17,7 +17,7 @@ import utils.adversarial as adv
 import utils.eval as ev
 import utils.gmm_helpers as gmm_helpers
 import model_params as params
-import resnet
+
 
 from tensorboardX import SummaryWriter
 
@@ -69,7 +69,7 @@ if hps.use_gmm:
         hps.lam = gmm_helpers.find_lam(gmm, hps.percentile, model_params.cali_loader)
         print('[INFO] chose loglambda as ' + str(hps.lam))
         
-    saving_string = ('gmm'+ rescaled + hps.dataset
+    saving_string = ('gmm_'+ rescaled + hps.dataset
                      +'_lam' + str(hps.lam)
                      +'_n' + str(hps.n)
                      +'_lr' + str(hps.lr)
@@ -81,7 +81,7 @@ if hps.use_gmm:
     if hps.gmm_path is not None:
         saving_string+= '_customGMM'
 else:
-    saving_string = ('base' + hps.dataset
+    saving_string = ('base_' + hps.dataset
                      +'_lr' + str(hps.lr)
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type))
@@ -119,10 +119,12 @@ for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
+    if (epoch%10)==5:
+        torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
     
     trainloss = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
                                   model_params.loaders[-1][1], 
-                                  optimizer, epoch, 
+                                  optimizer, epoch, epsilon=model_params.epsilon,
                                   steps=hps.steps, verbose=hps.verbose)
     
     trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
@@ -140,8 +142,8 @@ for epoch in range(hps.epochs):
         df = ev.evaluate(model, device, hps.dataset, model_params.loaders, writer=writer, epoch=epoch)
 
 df = ev.evaluate(model, device, hps.dataset, model_params.loaders)
-df.to_csv('results/model_'+saving_string+'.csv')
+df.to_csv('results/'+saving_string+'.csv')
 
 
 model = model.to('cpu')
-torch.save(model, 'SavedModels/model_'+saving_string+ '.pth')
+torch.save(model, 'SavedModels/' + saving_string+ '.pth')

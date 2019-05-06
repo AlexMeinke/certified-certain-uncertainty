@@ -47,8 +47,9 @@ def evaluate_model(model, device, base_loader, loaders):
 
 def write_log(df, writer, epoch=0):
     for i in df.index:
-        writer.add_scalar('AUROC/'+i, df.loc[i]['AUROC'], epoch)
-        writer.add_scalar('MMC/'+i, df.loc[i]['MMC'], epoch)
+        if i!='orig':
+            writer.add_scalar('AUROC/'+i, df.loc[i]['AUROC'], epoch)
+            writer.add_scalar('MMC/'+i, df.loc[i]['MMC'], epoch)
     
 
 def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=None, epoch=0):

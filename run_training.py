@@ -127,14 +127,13 @@ for epoch in range(hps.epochs):
                                   optimizer, epoch, epsilon=model_params.epsilon,
                                   steps=hps.steps, verbose=hps.verbose)
     
-    
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)
-
-    correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
-    writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
-    writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
-    writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
+    if (epoch)%5==3:
+        correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
+        writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
+        writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
+        writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
     if (epoch)%10==3:
         df = ev.evaluate(model, device, hps.dataset, model_params.loaders, writer=writer, epoch=epoch)
 

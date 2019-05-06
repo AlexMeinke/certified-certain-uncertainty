@@ -55,6 +55,7 @@ def write_log(df, writer, epoch=0):
 def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=None, epoch=0):
     NoiseLoader = loaders[-1][1]
     if load_adversaries:
+        print('[INFO] Loading Adversaries...')
         AdversarialNoiseLoader = adv.create_adv_noise_loader(model, NoiseLoader, device, batches=5)
         AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.datasets_dict[dataset](train=False), device, batches=5)
         temp = loaders + (

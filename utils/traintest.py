@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import utils.adversarial as adv
 
-def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=True):
+def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, steps=40, epsilon=0.3, verbose=100):
     # noise_loader is useless but this way all training functions have the same format
     criterion = nn.NLLLoss()
     model.train()
@@ -24,7 +24,7 @@ def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, ste
         train_loss += loss.item()
         _, predicted = output.max(1)
         correct += predicted.eq(target).sum().item()
-        if batch_idx % 100 == 0 and verbose:
+        if (batch_idx % verbose == 0) and verbose>0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
@@ -53,7 +53,7 @@ def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, step
         train_loss += loss.item()
         _, predicted = output.max(1)
         correct += predicted.eq(target).sum().item()
-        if batch_idx % verbose == 0:
+        if (batch_idx % verbose == 0) and verbose>0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
@@ -87,7 +87,7 @@ def train_ACET(model, device, train_loader, noise_loader, optimizer, epoch, step
         train_loss += loss.item()
         _, predicted = output.max(1)
         correct += predicted.eq(target).sum().item()
-        if batch_idx % verbose == 0:
+        if (batch_idx % verbose == 0) and verbose>0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))

@@ -82,7 +82,7 @@ def GrayCIFAR10(train=False, batch_size=None, augm_flag=False):
                        ])]
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(28, padding=4),
+        transforms.RandomCrop(28, padding=4, padding_mode='reflect'),
         ] + transform_base)
     
     transform_test = transforms.Compose(transform_base)
@@ -128,7 +128,7 @@ def CIFAR10(train=True, batch_size=None, augm_flag=True):
 
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
+        transforms.RandomCrop(32, padding=4, padding_mode='reflect'),
         ] + transform_base)
     
     transform_test = transforms.Compose(transform_base)
@@ -150,7 +150,7 @@ def CIFAR100(train=False, batch_size=None, augm_flag=False):
 
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
+        transforms.RandomCrop(32, padding=4, padding_mode='reflect'),
         ] + transform_base)
     
     transform_test = transforms.Compose(transform_base)
@@ -166,14 +166,17 @@ def SVHN(train=True, batch_size=None, augm_flag=True):
     if batch_size==None:
         if train:
             batch_size=train_batch_size
-            split = 'train'
         else:
             batch_size=test_batch_size
-            split = 'test'
+            
+    if train:
+        split = 'train'
+    else:
+        split = 'test'
 
     transform_base = [transforms.ToTensor()]
     transform_train = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
+        transforms.RandomCrop(32, padding=4, padding_mode='edge'),
     ] + transform_base)
     transform_test = transforms.Compose(transform_base)
     transform = transform_train if (augm_flag and train) else transform_test

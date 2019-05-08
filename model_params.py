@@ -3,7 +3,7 @@ import utils.dataloaders as dl
 import utils.resnet_orig as resnet
 
 class MNIST_params():
-    def __init__(self, augm_flag=True):
+    def __init__(self, augm_flag=True, batch_size=128):
         self.base_model = models.LeNetMadry()
         self.train_loader = dl.MNIST(train=True, augm_flag=augm_flag)
         self.cali_loader = dl.MNIST(train=True, augm_flag=False)
@@ -12,27 +12,27 @@ class MNIST_params():
         self.loaders = [('FMNIST', dl.FMNIST(train=False)), 
              ('EMNIST', dl.EMNIST(train=False)),
              ('GrayCIFAR10', dl.GrayCIFAR10(train=False)),
-             ('Noise', dl.Noise(dataset='MNIST'))]
+             ('Noise', dl.Noise(dataset='MNIST', batch_size=batch_size))]
         self.data_used = 60000
         self.epsilon = 0.3
 
 class SVHN_params():
-    def __init__(self, augm_flag=True):
+    def __init__(self, augm_flag=True, batch_size=128):
         self.base_model = resnet.ResNet18()
-        self.train_loader = dl.SVHN(train=True, augm_flag=augm_flag)
-        self.cali_loader = dl.SVHN(train=True, augm_flag=False)
+        self.train_loader = dl.SVHN(train=True, batch_size=batch_size, augm_flag=augm_flag)
+        self.cali_loader = dl.SVHN(train=True, batch_size=batch_size, augm_flag=False)
         self.test_loader = dl.SVHN(train=False)
         self.dim = 3072
         self.loaders = [('CIFAR10', dl.CIFAR10(train=False)), 
              ('CIFAR100', dl.CIFAR100(train=False)),
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
-             ('Noise', dl.Noise(dataset='SVHN'))]
+             ('Noise', dl.Noise(dataset='SVHN', batch_size=batch_size))]
         self.data_used = 50000
         self.epsilon = 0.1
         
 class CIFAR10_params():
-    def __init__(self, augm_flag=True):
+    def __init__(self, augm_flag=True, batch_size=128):
         self.base_model = resnet.ResNet18()
         self.train_loader = dl.CIFAR10(train=True, augm_flag=augm_flag)
         self.cali_loader = dl.CIFAR10(train=True, augm_flag=False)
@@ -42,7 +42,7 @@ class CIFAR10_params():
              ('CIFAR100', dl.CIFAR100(train=False)),
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
-             ('Noise', dl.Noise(dataset='SVHN'))]
+             ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size))]
         self.data_used = 50000
         self.epsilon = 0.1
         

@@ -41,11 +41,11 @@ parser.add_argument('--grad_vars', nargs='+', type=str, default=['mu'],
 parser.add_argument('--augm_flag', type=bool, default=False, help='whether to use data augmentation')
 parser.add_argument('--gmm_path', type=str, default=None, 
                     help='path to gmm. If None, standard output of build_gmm.py is used.')
-parser.add_argument('--verbose', type=bool, default=False, help='display training progress in command line')
+parser.add_argument('--verbose', type=int, default=-1, help='display training progress in command line')
 parser.add_argument('--train_type', type=str, default='ACET', help='train on plain, CEDA or ACET')
 parser.add_argument('--warmstart', type=str, default='None', help='warmstart base model on pretrained model')
 parser.add_argument('--rescaled', type=bool, default=False, help='use rescaled gmm')
-parser.add_argument('--percentile', type=float, default=0.05, help='percentile with which to choose lambda')
+parser.add_argument('--percentile', type=float, default=1., help='percentile with which to choose lambda')
 
 hps = parser.parse_args()
 
@@ -87,6 +87,8 @@ else:
                      +'_train_type' + str(hps.train_type))
 if hps.warmstart!='None':
     saving_string += '_warmstart'
+if hps.train_type=='ACET':
+    saving_string += '_steps'+str(hps.steps)
 
 device = torch.device('cuda:' + str(hps.gpu))
 writer = SummaryWriter('runs/'+saving_string+str(datetime.datetime.now()))
@@ -134,8 +136,8 @@ for epoch in range(hps.epochs):
         writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
         writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
         writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
-    if (epoch)%10==3:
-        df = ev.evaluate(model, device, hps.dataset, model_params.loaders, writer=writer, epoch=epoch)
+   # if (epoch)%10==7:
+   #     df = ev.evaluate(model, device, hps.dataset, model_params.loaders, writer=writer, epoch=epoch)
 
 df = ev.evaluate(model, device, hps.dataset, model_params.loaders)
 df.to_csv('results/'+saving_string+'.csv')

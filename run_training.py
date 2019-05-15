@@ -46,6 +46,7 @@ parser.add_argument('--train_type', type=str, default='ACET', help='train on pla
 parser.add_argument('--warmstart', type=str, default='None', help='warmstart base model on pretrained model')
 parser.add_argument('--rescaled', type=bool, default=False, help='use rescaled gmm')
 parser.add_argument('--percentile', type=float, default=1., help='percentile with which to choose lambda')
+parser.add_argument('--PCA', type=bool, default=False, help='use PCA in GMM metric')
 
 hps = parser.parse_args()
 
@@ -55,12 +56,15 @@ base_model = model_params.base_model
 if hps.warmstart!='None':
     base_model = torch.load(hps.warmstart)
 
-rescaled = '_rescaled' if hps.rescaled else ''
+args = ''
+args = (args + '_PCA') if hps.PCA else args
+args = (args + '_rescaled') if hps.rescaled else args
+
 loading_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_n' + str(hps.n)
                  +'_data_used' + str(model_params.data_used)
                  +'_augm_flag' + str(hps.augm_flag)
-                 +'_alg_'+'scikit'+rescaled
+                 +'_alg_' + 'scikit' + args
                  +'.pth') if hps.gmm_path is None else hps.gmm_path
 
 if hps.use_gmm:
@@ -69,7 +73,7 @@ if hps.use_gmm:
         hps.lam = gmm_helpers.find_lam(gmm, hps.percentile, model_params.cali_loader)
         print('[INFO] chose loglambda as ' + str(hps.lam))
         
-    saving_string = ('gmm_'+ rescaled + hps.dataset
+    saving_string = ('gmm_'+ args + hps.dataset
                      +'_lam' + str(hps.lam)
                      +'_n' + str(hps.n)
                      +'_lr' + str(hps.lr)
@@ -79,7 +83,7 @@ if hps.use_gmm:
     for name in hps.grad_vars:
         saving_string += ' ' + name
     if hps.gmm_path is not None:
-        saving_string+= '_customGMM'
+        saving_string += '_customGMM'
 else:
     saving_string = ('base_' + hps.dataset
                      +'_lr' + str(hps.lr)
@@ -104,9 +108,10 @@ else:
     model = base_model.to(device)
 
 lr = hps.lr
+lr_gmm = lr / 1000.
 
 if hps.use_gmm:
-    param_groups = [{'params':model.mm.parameters(),'lr':lr, 'weight_decay':0.},
+    param_groups = [{'params':model.mm.parameters(),'lr':lr_gmm, 'weight_decay':0.},
                     {'params':model.base_model.parameters(),'lr':lr, 'weight_decay':hps.decay}]
 else:
     param_groups = [{'params':model.parameters(),'lr':lr, 'weight_decay':hps.decay}]

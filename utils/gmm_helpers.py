@@ -7,7 +7,7 @@ import utils.dataloaders as dl
 def find_lam(gmm, percentile, dataloader):
     X = []
     for i, (x, _) in enumerate(dataloader):
-        if i>100:
+        if i>600:
             break;
         X.append(torch.logsumexp(gmm(x.view(-1,gmm.D)),0).detach() )
     X = torch.cat(X, 0)

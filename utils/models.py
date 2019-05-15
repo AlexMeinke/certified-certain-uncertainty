@@ -11,6 +11,7 @@ from sklearn.cluster import KMeans
 import numpy as np
 from sklearn.decomposition import PCA
 
+
 class LpMetric(nn.Module):
     def __init__(self, p=2):
         super().__init__()
@@ -19,8 +20,9 @@ class LpMetric(nn.Module):
     def forward(self, x, y, dim=None):
         return (x-y).norm(p=self.p, dim=dim)
 
+    
 class PCAMetric(nn.Module):
-    def __init__(self, X, p=2, min_sv_factor=100):
+    def __init__(self, X, p=2, min_sv_factor=100.):
         super().__init__()
         self.p = p
         X = np.array(X)
@@ -29,7 +31,7 @@ class PCAMetric(nn.Module):
 
         self.comp_vecs = nn.Parameter(torch.tensor(pca.components_), requires_grad=False)
         self.singular_values = torch.tensor(pca.singular_values_)
-        self.min_sv = self.singular_values[0]/100.
+        self.min_sv = self.singular_values[0] / min_sv_factor
         self.singular_values[self.singular_values<self.min_sv] = self.min_sv
         self.singular_values = nn.Parameter(self.singular_values, requires_grad=False)
         
@@ -38,6 +40,7 @@ class PCAMetric(nn.Module):
         rescaled_dist = rotated_dist / self.singular_values[None,None,:]
         return rescaled_dist.norm(dim=2, p=self.p)
 
+    
 class LossModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -49,6 +52,7 @@ class LossModel(nn.Module):
         x = F.max_pool2d(x, 2, 2).view(-1,14*14*32)
         return x
 
+    
 class PerceptualMetric(nn.Module):
     def __init__(self, model, p=2):
         super().__init__()
@@ -58,6 +62,7 @@ class PerceptualMetric(nn.Module):
     def forward(self, x, y, dim=None):
         return (self.model(x)[None,:,:]-self.model(y)[:,None,:]).norm(p=self.p, dim=dim)
 
+    
 class PerceptualPCA(nn.Module):
     def __init__(self, model, pca, p=2):
         super().__init__()
@@ -66,6 +71,7 @@ class PerceptualPCA(nn.Module):
         
     def forward(self, x, y, dim=None):
         return self.pca(self.model(x)[None,:,:], self.model(y)[:,None,:])
+    
     
 class MixtureModel(nn.Module):
     
@@ -94,7 +100,7 @@ class MixtureModel(nn.Module):
             self.logvar = nn.Parameter(logvar)
             
         if alpha is None:
-            self.alpha = nn.Parameter(torch.empty(K).fill_(1. / K)).log()
+            self.alpha = nn.Parameter(torch.empty(K).fill_(1. / K).log())
         else:
             self.alpha = nn.Parameter(alpha)
 
@@ -131,7 +137,9 @@ class MixtureModel(nn.Module):
 
                 if (use_kmeans):
                     kmeans = KMeans(n_clusters=self.K, random_state=0, max_iter=300).fit(X.cpu())
-                    self.mu.data = torch.tensor(kmeans.cluster_centers_, dtype=torch.float, device=self.mu.device)
+                    self.mu.data = torch.tensor(kmeans.cluster_centers_, 
+                                                dtype=torch.float, 
+                                                device=self.mu.device)
                 else:
                     idxs = torch.from_numpy(np.random.choice(m, self.K, replace=False)).long()
                     self.mu.data = X[idxs]
@@ -140,10 +148,14 @@ class MixtureModel(nn.Module):
                 for i in range(self.K):
                     assert (index==i).sum()>0, 'Empty cluster'
                     self.alpha.data[i] = ((index==i).float().sum() / (3*self.K)).log()
-                    temp = (X[index==i,:] -self.mu.data[i,:]).norm(dim=1).mean()
+                    temp = (X[index==i,:] - self.mu.data[i,:]).norm(dim=1).mean()
                     if temp < 0.00001:
                         temp = torch.tensor(1.)
                     self.logvar.data[i] = temp.log() * 2
+                
+                self.alpha.data = self.alpha.data.exp()
+                self.alpha.data /= self.alpha.data.sum()
+                self.alpha.data = self.alpha.data.log()
 
                 self.logvarbound = (X.var() / m).log()
 
@@ -167,7 +179,6 @@ class MixtureModel(nn.Module):
                     if delta<10e-6:
                         break
 
-
             
 class GMM(MixtureModel):
     def __init__(self, K, D, mu=None, logvar=None, alpha=None, metric=LpMetric()):
@@ -189,7 +200,6 @@ class GMM(MixtureModel):
         return (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
                 - .5*( a/b ) )
     
-        
     def calculate_bound(self, L):
         var = self.logvar[:,None].exp()
         bound = (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
@@ -218,9 +228,10 @@ class QuadraticMixtureModel(MixtureModel):
         
     def calculate_bound(self, L):
         var = self.logvar[:,None].exp()
-        bound = ( self.alpha[:,None] - ( 1+ L**2/var ).log() ).squeeze()
+        bound = ( self.alpha[:,None] - ( 1 + L**2/var ).log() ).squeeze()
         return torch.logsumexp(bound, dim=0)
-                        
+
+    
 class LeNet(nn.Module):
     def __init__(self, preproc=torch.zeros(28, 28)):
         super().__init__()
@@ -243,6 +254,7 @@ class LeNet(nn.Module):
         x = F.log_softmax(x, dim=1)
         return x
 
+    
 class LeNetMadry(nn.Module):
     def __init__(self):
         super().__init__()

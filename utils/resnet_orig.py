@@ -63,11 +63,11 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10):
+    def __init__(self, block, num_blocks, num_classes=10, num_of_channels=3):
         super(ResNet, self).__init__()
         self.in_planes = 64
 
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(num_of_channels, 64, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
@@ -93,10 +93,13 @@ class ResNet(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.linear(out)
         return F.log_softmax(out, dim=1)
-
-
+    
+    
 def ResNet18():
     return ResNet(BasicBlock, [2,2,2,2])
+
+def ResNet18Gray():
+    return ResNet(BasicBlock, [2,2,2,2], num_of_channels=1)
 
 def ResNet34():
     return ResNet(BasicBlock, [3,4,6,3])

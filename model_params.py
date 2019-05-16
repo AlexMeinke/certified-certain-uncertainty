@@ -16,6 +16,7 @@ class MNIST_params():
              ('Noise', dl.Noise(dataset='MNIST', batch_size=batch_size))]
         self.data_used = 60000
         self.epsilon = 0.3
+        self.lr = 1e-3
         
         
 class FMNIST_params():
@@ -24,7 +25,7 @@ class FMNIST_params():
         self.base_model = resnet.ResNet18Gray()
         self.train_loader = dl.FMNIST(train=True, batch_size=128, augm_flag=augm_flag)
         self.cali_loader = dl.FMNIST(train=True, batch_size=128, augm_flag=False)
-        self.test_loader = dl.FMNIST(train=False)
+        self.test_loader = dl.FMNIST(train=False, augm_flag=False)
         self.dim = 784
         self.loaders = [('MNIST', dl.MNIST(train=False)), 
              ('EMNIST', dl.EMNIST(train=False)),
@@ -32,6 +33,7 @@ class FMNIST_params():
              ('Noise', dl.Noise(dataset='FMNIST', batch_size=batch_size))]
         self.data_used = 60000
         self.epsilon = 0.3
+        self.lr = 0.1
 
         
 class SVHN_params():
@@ -48,6 +50,7 @@ class SVHN_params():
              ('Noise', dl.Noise(dataset='SVHN', batch_size=batch_size))]
         self.data_used = 50000
         self.epsilon = 0.1
+        self.lr = 0.1
         
         
 class CIFAR10_params():
@@ -64,6 +67,7 @@ class CIFAR10_params():
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size))]
         self.data_used = 50000
         self.epsilon = 0.1
+        self.lr = 0.1
        
     
 params_dict = {'MNIST':          MNIST_params,

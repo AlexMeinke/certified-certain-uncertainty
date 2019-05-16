@@ -16,6 +16,7 @@ class LpMetric(nn.Module):
     def __init__(self, p=2):
         super().__init__()
         self.p = p
+        self.norm_const = 0.
         
     def forward(self, x, y, dim=None):
         return (x-y).norm(p=self.p, dim=dim)
@@ -34,6 +35,8 @@ class PCAMetric(nn.Module):
         self.min_sv = self.singular_values[0] / min_sv_factor
         self.singular_values[self.singular_values<self.min_sv] = self.min_sv
         self.singular_values = nn.Parameter(self.singular_values, requires_grad=False)
+        
+        self.norm_const = self.singular_values.log().sum()
         
     def forward(self, x, y, dim=None):
         rotated_dist = torch.einsum("ijk,lk->ijl", (x-y, self.comp_vecs))
@@ -188,6 +191,7 @@ class GMM(MixtureModel):
         :param D: number of features
         """
         super().__init__(K, D, mu, logvar, alpha, metric)
+        self.norm_const = torch.tensor(2*np.pi).log() * self.D + metric.norm_const
 
     def forward(self, X):
         """
@@ -198,12 +202,12 @@ class GMM(MixtureModel):
         a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
         b = self.logvar[:,None].exp()
         return (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
-                - .5*( a/b ) )
+                - .5*( a/b ) - self.norm_const)
     
     def calculate_bound(self, L):
         var = self.logvar[:,None].exp()
         bound = (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
-                - .5* ( L**2/(2*var) ) )
+                - .5* ( L**2/(2*var) ) - self.norm_const )
         return torch.logsumexp(bound.squeeze(),dim=0)
                     
 

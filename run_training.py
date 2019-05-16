@@ -28,15 +28,15 @@ parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_c
 
 
 parser.add_argument('--gpu', type=int, default=3, help='GPU index.')
-parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate.')
-parser.add_argument('--lam', type=float, default=-1000000., help='log of lambda.')
+parser.add_argument('--lr', type=float, default=None, help='initial learning rate.')
+parser.add_argument('--lam', type=float, default=0., help='log of lambda.')
 parser.add_argument('--n', type=int, default=1000, help='number of centroids.')
 parser.add_argument('--decay', type=float, default=5e-4, help='weight decay for base model.')
 parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, CIFAR10')
 parser.add_argument('--use_gmm', type=bool, default=False, help='use gmm in training or not')
 parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
 parser.add_argument('--steps', type=int, default=40, help='PGD steps in training ACET')
-parser.add_argument('--grad_vars', nargs='+', type=str, default=['mu'], 
+parser.add_argument('--grad_vars', nargs='+', type=str, default=['mu', 'var'], 
                     help='variables in gmm that require grad')
 parser.add_argument('--augm_flag', type=bool, default=False, help='whether to use data augmentation')
 parser.add_argument('--gmm_path', type=str, default=None, 
@@ -55,6 +55,9 @@ model_params = params.params_dict[hps.dataset](augm_flag=hps.augm_flag)
 base_model = model_params.base_model
 if hps.warmstart!='None':
     base_model = torch.load(hps.warmstart)
+    
+if hps.lr is None:
+    hps.lr = model.params.lr
 
 args = ''
 args = (args + '_PCA') if hps.PCA else args
@@ -108,7 +111,7 @@ else:
     model = base_model.to(device)
 
 lr = hps.lr
-lr_gmm = lr / 1000.
+lr_gmm = lr
 
 if hps.use_gmm:
     param_groups = [{'params':model.mm.parameters(),'lr':lr_gmm, 'weight_decay':0.},
@@ -122,6 +125,8 @@ else:
     optimizer = optim.SGD(param_groups, momentum=0.9)
 
 
+lam = model.loglam.data.exp().item() if hps.use_gmm else 1.
+
 for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
@@ -131,7 +136,7 @@ for epoch in range(hps.epochs):
     
     trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
                                   model_params.loaders[-1][1], 
-                                  optimizer, epoch, epsilon=model_params.epsilon,
+                                  optimizer, epoch, lam=lam, epsilon=model_params.epsilon,
                                   steps=hps.steps, verbose=hps.verbose)
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)

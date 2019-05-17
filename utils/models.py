@@ -44,6 +44,22 @@ class PCAMetric(nn.Module):
         return rescaled_dist.norm(dim=2, p=self.p)
 
     
+class MyPCA():
+    def __init__(self, comp_vecs, singular_values, shape):
+        self.comp_vecs = comp_vecs
+        self.singular_values = singular_values
+        self.shape = tuple(shape)
+        self.D = torch.tensor(shape).prod().item()
+        
+    def inv_trans(self, x):
+        x = ( (x * self.singular_values[None,:] ) @ self.comp_vecs.inverse() )
+        return x.view(tuple([x.shape[0]]) + self.shape)
+    
+    def trans(self, x):
+        x = x.view(-1, self.D)
+        return ( (x@self.comp_vecs) / self.singular_values[None,:] )
+    
+    
 class LossModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -191,7 +207,7 @@ class GMM(MixtureModel):
         :param D: number of features
         """
         super().__init__(K, D, mu, logvar, alpha, metric)
-        self.norm_const = torch.tensor(2*np.pi).log() * self.D + metric.norm_const
+        self.norm_const = .5 * torch.tensor(2*np.pi).log() * self.D + metric.norm_const
 
     def forward(self, X):
         """

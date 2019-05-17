@@ -18,19 +18,18 @@ import utils.eval as ev
 import utils.gmm_helpers as gmm_helpers
 import model_params as params
 
-
 from tensorboardX import SummaryWriter
-
 
 import argparse
 
-parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_chars='-')
 
+parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_chars='-')
 
 parser.add_argument('--gpu', type=int, default=3, help='GPU index.')
 parser.add_argument('--lr', type=float, default=None, help='initial learning rate.')
+parser.add_argument('--lr_gmm', type=float, default=None, help='initial learning rate.')
 parser.add_argument('--lam', type=float, default=0., help='log of lambda.')
-parser.add_argument('--n', type=int, default=1000, help='number of centroids.')
+parser.add_argument('--n', type=int, default=100, help='number of centroids.')
 parser.add_argument('--decay', type=float, default=5e-4, help='weight decay for base model.')
 parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, CIFAR10')
 parser.add_argument('--use_gmm', type=bool, default=False, help='use gmm in training or not')
@@ -57,7 +56,8 @@ if hps.warmstart!='None':
     base_model = torch.load(hps.warmstart)
     
 if hps.lr is None:
-    hps.lr = model.params.lr
+    hps.lr = model_params.lr
+    hps.lr_gmm = model_params.lr
 
 args = ''
 args = (args + '_PCA') if hps.PCA else args
@@ -80,6 +80,7 @@ if hps.use_gmm:
                      +'_lam' + str(hps.lam)
                      +'_n' + str(hps.n)
                      +'_lr' + str(hps.lr)
+                     +'_lrgmm' + str(hps.lr_gmm)
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type)
                      +'grad_vars')
@@ -111,7 +112,7 @@ else:
     model = base_model.to(device)
 
 lr = hps.lr
-lr_gmm = lr
+lr_gmm = hps.lr_gmm
 
 if hps.use_gmm:
     param_groups = [{'params':model.mm.parameters(),'lr':lr_gmm, 'weight_decay':0.},
@@ -125,7 +126,7 @@ else:
     optimizer = optim.SGD(param_groups, momentum=0.9)
 
 
-lam = model.loglam.data.exp().item() if hps.use_gmm else 1.
+lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.lam)
 
 for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
@@ -154,4 +155,7 @@ df.to_csv('results/'+saving_string+'.csv')
 
 
 model = model.to('cpu')
-torch.save(model, 'SavedModels/' + saving_string+ '.pth')
+if hps.use_gmm:
+    torch.save(model, 'SavedModels/' + saving_string+ '.pth')
+else:
+    torch.save(model, 'SavedModels/base/' + saving_string+ '.pth')

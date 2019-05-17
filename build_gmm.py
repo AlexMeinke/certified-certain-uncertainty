@@ -66,7 +66,7 @@ elif hps.alg=='scikit':
     mu = torch.tensor(clf.means_ ,dtype=torch.float)
     logvar = torch.tensor(np.log(clf.covariances_) ,dtype=torch.float)
     alpha = torch.tensor(np.log(clf.weights_) ,dtype=torch.float)
-    gmm = models.GMM(hps.n, dim, mu=mu, logvar=logvar, alpha=alpha, metric=metric)
+    gmm = models.GMM(hps.n, dim, mu=mu, logvar=logvar, metric=metric)
 else:    
     raise ValueError("Invalid algorithm "+ str(hps.alg))
     
@@ -85,7 +85,7 @@ if hps.PCA:
 
 torch.save(gmm, saving_string + '.pth')
 
-gmm = gmm_helpers.rescale(gmm, 1., loader)
-saving_string += '_rescaled'
-torch.save(gmm, saving_string+'.pth')
+# gmm = gmm_helpers.rescale(gmm, 1., loader)
+# saving_string += '_rescaled'
+# torch.save(gmm, saving_string+'.pth')
 print('Done')

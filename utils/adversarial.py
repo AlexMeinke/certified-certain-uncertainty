@@ -39,6 +39,41 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
             
     return data.detach()
 
+
+def gen_pca_noise(model, device, seed, pca, epsilon=0.1, steps=40, alpha=0.01):
+
+    with torch.no_grad():
+        batch_size = seed.shape[0]
+
+
+        orig_data_pca = pca.trans(seed)
+        data_pca = pca.trans(seed).requires_grad_()
+
+        prev_losses = -100000.*torch.ones(batch_size, device=device)
+        prev_grad = torch.zeros_like(seed, device=device)
+
+    for _ in range(steps):
+        with torch.enable_grad():
+            y = model(pca.inv_trans(data_pca))
+            losses = y.max(1)[0]
+            losses.sum().backward()
+
+        with torch.no_grad():
+            delta = data_pca + alpha*data_pca.grad - orig_data_pca
+            N = delta.norm(dim=-1)
+
+            index = N>epsilon
+
+            delta[index] *= (epsilon / N[index])[:, None]
+            
+
+            data_pca = orig_data_pca + delta
+            data = pca.inv_trans(data_pca)
+            data = torch.clamp(data, 0, 1)
+            data_pca = pca.trans(data).requires_grad_()
+    return data
+
+
 def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.001):
     correct_index = label[:,None]!=torch.arange(10)[None,:]
     with torch.no_grad():

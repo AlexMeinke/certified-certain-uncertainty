@@ -13,13 +13,19 @@ def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, lam
     train_loss = 0
     correct = 0
     
-    for batch_idx, (data, target) in enumerate(train_loader):
+    p_in = 1. / (1. + lam)
+    
+    enum = zip(enumerate(train_loader),enumerate(noise_loader))
+    for ((batch_idx, (data, target)), (_, (noise, _))) in enum:
         data, target = data.to(device), target.to(device)
-
-        optimizer.zero_grad()
+        
+        noise = torch.rand_like(data)
+        
         output = model(data)
-
-        loss = criterion(output, target)
+        
+        loss = p_in*criterion(output, target)
+        
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
@@ -47,17 +53,59 @@ def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, lam=
     for ((batch_idx, (data, target)), (_, (noise, _))) in enum:
         data, target = data.to(device), target.to(device)
         
-        noise = torch.rand_like(data)        
-
-        optimizer.zero_grad()
-        output = model(data)
+        noise = torch.rand_like(data)
         
+        output = model(data)  
+        
+        model.eval()
         output_adv = model(noise)
+        model.train()
         
-        loss1 = F.nll_loss(output, target)
+        loss1 = criterion(output, target)
         loss2 = - output_adv.mean()
-        
         loss = p_in*loss1 + p_out*loss2
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        train_loss += loss.item()
+        _, predicted = output.max(1)
+        correct += predicted.eq(target).sum().item()
+        if (batch_idx % verbose == 0) and verbose>0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
+
+
+def train_CEDA_smoothed(model, device, train_loader, noise_loader, optimizer, epoch, lam=1., steps=40, epsilon=0.3, verbose=100):
+    criterion = nn.NLLLoss()
+    model.train()
+    
+    train_loss = 0
+    correct = 0
+    
+    p_in = 1. / (1. + lam)
+    p_out = lam * p_in
+    
+    enum = zip(enumerate(train_loader),enumerate(noise_loader))
+    for ((batch_idx, (data, target)), (_, (noise, _))) in enum:
+        data, target = data.to(device), target.to(device)
+        
+        noise = noise.to(device)
+        
+        output = model(data)  
+        
+        model.eval()
+        output_adv = model(noise)
+        model.train()
+        
+        loss1 = criterion(output, target)
+        loss2 = - output_adv.mean()
+        loss = p_in*loss1 + p_out*loss2
+        
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
@@ -93,11 +141,14 @@ def train_CEDA_gmm(model, device, train_loader, noise_loader, optimizer, epoch, 
         optimizer.zero_grad()
         output = model(data)
         
+        model.eval()
         output_adv = model(noise)
+        model.train()
+        
         like_in = torch.logsumexp( model.mm(data.view(data.shape[0], -1)), 0 )
         like_out =  torch.logsumexp( model.mm(noise.view(noise.shape[0], -1)), 0 )
         
-        loss1 = F.nll_loss(output, target)
+        loss1 = criterion(output, target)
         loss2 = - output_adv.mean()
         loss3 = - torch.logsumexp(torch.stack([log_p_in + like_in, 
                                                log_p_out*torch.ones_like(like_in)], 0), 0).mean()
@@ -199,5 +250,6 @@ def test_adv(model, device, adv_test_loader, min_conf=.1):
 training_dict = {'plain': train_plain,
                   'CEDA': train_CEDA,
                   'ACET': train_ACET,
-                  'CEDA_GMM' : train_CEDA_gmm
+                  'CEDA_GMM' : train_CEDA_gmm,
+                  'CEDA_smooth' : train_CEDA_smoothed
                 }

@@ -17,6 +17,7 @@ class MNIST_params():
         self.data_used = 60000
         self.epsilon = 0.3
         self.lr = 1e-3
+        self.data_name = 'MNIST'
         
         
 class FMNIST_params():
@@ -34,6 +35,7 @@ class FMNIST_params():
         self.data_used = 60000
         self.epsilon = 0.3
         self.lr = 0.1
+        self.data_name = 'FMNIST'
 
         
 class SVHN_params():
@@ -51,6 +53,7 @@ class SVHN_params():
         self.data_used = 50000
         self.epsilon = 0.1
         self.lr = 0.1
+        self.data_name = 'SVHN'
         
         
 class CIFAR10_params():
@@ -68,6 +71,7 @@ class CIFAR10_params():
         self.data_used = 50000
         self.epsilon = 0.1
         self.lr = 0.1
+        self.data_name = 'CIFAR10'
        
     
 params_dict = {'MNIST':          MNIST_params,

@@ -40,15 +40,15 @@ def plot_samples(Y, data, dataset='MNIST'):
         plt.subplot(2,5,i+1)
         string = ''
         for y in Y:
-            if dataset=='MNIST':
+            if dataset in ['MNIST','SVHN']:
                 string += '\n' + str(y.argmax(1)[i].item()) + ": %.3f" % y[i].max().exp().item()
             elif dataset=='CIFAR10':
                 string += '\n' + classes_CIFAR10[y.argmax(1)[i].item()] + ": %.3f" % y[i].max().exp().item()
         plt.title(string)
         if dataset=='MNIST':
             plt.imshow(data[i].squeeze().detach().cpu(), cmap='gray', interpolation='none')
-        elif dataset=='CIFAR10':
-            plt.imshow(data[i].transpose(0,2).transpose(0,1), interpolation='none')
+        elif dataset in ['CIFAR10', 'SVHN']:
+            plt.imshow(data[i].transpose(0,2).transpose(0,1).detach().cpu(), interpolation='none')
         plt.xticks([])
         plt.yticks([])
     plt.show()

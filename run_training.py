@@ -51,6 +51,7 @@ hps = parser.parse_args()
 
 
 model_params = params.params_dict[hps.dataset](augm_flag=hps.augm_flag)
+
 base_model = model_params.base_model
 if hps.warmstart!='None':
     base_model = torch.load(hps.warmstart)
@@ -128,17 +129,28 @@ else:
 
 lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.lam)
 
+prev_acc = 0.
+
 for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
-    if (epoch%10)==5:
-        torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
+
+    torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
     
     trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
                                   model_params.loaders[-1][1], 
                                   optimizer, epoch, lam=lam, epsilon=model_params.epsilon,
                                   steps=hps.steps, verbose=hps.verbose)
+    if hps.train_type=='ACET':
+        if trainloss != trainloss:
+            model = torch.load('Checkpoints/' + saving_string+ '.pth')
+            print('[Warning] NaN encountered, Reloaded Checkpoint: ' + saving_string)
+        elif (correct < .9*prev_acc):
+            model = torch.load('Checkpoints/' + saving_string+ '.pth')
+            print('[Warning] Loss increased, Reloaded Checkpoint: ' + saving_string)
+        else:
+            prev_acc = correct
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)
@@ -150,8 +162,8 @@ for epoch in range(hps.epochs):
    # if (epoch)%10==7:
    #     df = ev.evaluate(model, device, hps.dataset, model_params.loaders, writer=writer, epoch=epoch)
 
-df = ev.evaluate(model, device, hps.dataset, model_params.loaders)
-df.to_csv('results/'+saving_string+'.csv')
+# df = ev.evaluate(model, device, hps.dataset, model_params.loaders)
+# df.to_csv('results/'+saving_string+'.csv')
 
 
 model = model.to('cpu')

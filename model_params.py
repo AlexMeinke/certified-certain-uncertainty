@@ -18,6 +18,7 @@ class MNIST_params():
         self.epsilon = 0.3
         self.lr = 1e-3
         self.data_name = 'MNIST'
+        self.classes = 10
         
         
 class FMNIST_params():
@@ -36,6 +37,7 @@ class FMNIST_params():
         self.epsilon = 0.3
         self.lr = 0.1
         self.data_name = 'FMNIST'
+        self.classes = 10
 
         
 class SVHN_params():
@@ -51,9 +53,10 @@ class SVHN_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN', batch_size=batch_size))]
         self.data_used = 50000
-        self.epsilon = 0.1
+        self.epsilon = 0.3
         self.lr = 0.1
         self.data_name = 'SVHN'
+        self.classes = 10
         
         
 class CIFAR10_params():
@@ -69,13 +72,34 @@ class CIFAR10_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size))]
         self.data_used = 50000
-        self.epsilon = 0.1
+        self.epsilon = 0.3
         self.lr = 0.1
         self.data_name = 'CIFAR10'
+        self.classes = 10
+        
+        
+class CIFAR100_params():
+    def __init__(self, augm_flag=True, batch_size=128):
+        self.base_model = resnet.ResNet18_100()
+        self.train_loader = dl.CIFAR100(train=True, batch_size=128, augm_flag=augm_flag)
+        self.cali_loader = dl.CIFAR100(train=True, batch_size=128, augm_flag=False)
+        self.test_loader = dl.CIFAR100(train=False)
+        self.dim = 3072
+        self.loaders = [('SVHN', dl.SVHN(train=False)), 
+             ('CIFAR10', dl.CIFAR10(train=False)),
+             ('LSUN_CR', dl.LSUN_CR(train=False)),
+             ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
+             ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size))]
+        self.data_used = 50000
+        self.epsilon = 0.3
+        self.lr = 0.1
+        self.data_name = 'CIFAR100'
+        self.classes = 10
        
     
 params_dict = {'MNIST':          MNIST_params,
                'FMNIST':         FMNIST_params,
                'SVHN':           SVHN_params,
                'CIFAR10':        CIFAR10_params,
+               'CIFAR100':       CIFAR100_params,
               }

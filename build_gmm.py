@@ -9,7 +9,7 @@ import utils.gmm_helpers as gmm_helpers
 import argparse
 
 parser = argparse.ArgumentParser(description='Define hyperparameters.')
-parser.add_argument('--n', type=int, default=1000, help='number of Gaussians.')
+parser.add_argument('--n', type=int, default=100, help='number of Gaussians.')
 parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, CIFAR10.')
 parser.add_argument('--verbose', type=bool, default=False, help='whether to print current iteration.')
 parser.add_argument('--data_used', type=int, default=None, help='number of datapoints to be used.')
@@ -36,7 +36,10 @@ elif hps.dataset=='CIFAR10':
     dim = 3072
     loader = dl.CIFAR10(train=True,augm_flag=hps.augm_flag)
     hps.data_used = 50000 if hps.data_used is None else hps.data_used
-
+elif hps.dataset=='CIFAR100':
+    dim = 3072
+    loader = dl.CIFAR100(train=True,augm_flag=hps.augm_flag)
+    hps.data_used = 50000 if hps.data_used is None else hps.data_used
 
 X = []
 for x, f in loader:
@@ -46,8 +49,8 @@ X = torch.cat(X, 0)
 X = X[:hps.data_used] #needed to keep memory of distance matrix below 800 GB
 
 if hps.PCA:
-    metric = models.PCAMetric( X, p=2, min_sv_factor=10000)
-    X = ( (X@metric.comp_vecs.t()) / metric.singular_values[None,:] )
+    metric = models.PCAMetric( X, p=2, min_sv_factor=1e5)
+    X = ( (X@metric.comp_vecs.t()) / metric.singular_values_sqrt[None,:] )
 else:
     metric = models.LpMetric()
 
@@ -71,7 +74,7 @@ else:
     raise ValueError("Invalid algorithm "+ str(hps.alg))
     
 if hps.PCA:
-    gmm.mu.data = ( (gmm.mu.data * metric.singular_values[None,:] ) @ metric.comp_vecs.t().inverse() )
+    gmm.mu.data = ( (gmm.mu.data * metric.singular_values_sqrt[None,:] ) @ metric.comp_vecs.t().inverse() )
     
 saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_n' + str(hps.n)

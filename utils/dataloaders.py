@@ -64,7 +64,7 @@ def FMNIST(train=False, batch_size=None, augm_flag=False):
             batch_size=test_batch_size
     transform_base = [transforms.ToTensor()]
     transform_train = transforms.Compose([
-        transforms.RandomCrop(28, padding=4),
+        transforms.RandomCrop(28, padding=2),
     ] + transform_base)
     transform_test = transforms.Compose(transform_base)
     
@@ -263,7 +263,7 @@ datasets_dict = {'MNIST':          MNIST,
                  'cifar10_gray':   GrayCIFAR10,
                  'emnist':         EMNIST,
                  'CIFAR10':        CIFAR10,
-                 'cifar100':       CIFAR100,
+                 'CIFAR100':       CIFAR100,
                  'SVHN':           SVHN,
                  'lsun_classroom': LSUN_CR,
                  'imagenet_minus_cifar10':  ImageNetMinusCifar10,

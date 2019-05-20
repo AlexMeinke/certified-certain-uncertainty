@@ -3,8 +3,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score
 
+import scipy
+
 import utils.adversarial as adv
 import utils.dataloaders as dl
+import utils.models as models
+import utils.gmm_helpers as gmm_helpers
 
 def test_metrics(model, device, in_loader, out_loader):
     with torch.no_grad():
@@ -34,6 +38,7 @@ def test_metrics(model, device, in_loader, out_loader):
         auroc = roc_auc_score(y_true, y_scores)
         fp95 = ((conf_out > 0.95).sum().float()/(count*out_loader.batch_size)).item()
         return mmc, auroc, fp95
+
     
 def evaluate_model(model, device, base_loader, loaders):
     metrics = []
@@ -45,6 +50,7 @@ def evaluate_model(model, device, base_loader, loaders):
     df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUROC', 'FPR@95'])
     return df.set_index('DataSet')
 
+
 def write_log(df, writer, epoch=0):
     for i in df.index:
         if i!='orig':
@@ -52,6 +58,7 @@ def write_log(df, writer, epoch=0):
             writer.add_scalar('MMC/'+i, df.loc[i]['MMC'], epoch)
     
 
+    
 def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=None, epoch=0):
     NoiseLoader = loaders[-1][1]
     if load_adversaries:
@@ -70,3 +77,38 @@ def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=Non
     if writer is not None:
         write_log(df, writer, epoch)
     return df
+
+
+def aggregate_adv_stats(model_list, gmm, device, shape, classes=10, 
+                        batches=10, batch_size=100, steps=200, restarts=10, alpha=1., lam=1.):
+    pca = models.MyPCA(gmm.metric.comp_vecs.t(), gmm.metric.singular_values, shape)
+    
+    f = 2.
+    b = lam * (f-1.) / (classes-f)
+
+    bounds = []
+    stats = []
+
+    for _ in range(batches):
+        seed = torch.rand((batch_size,)+tuple(shape), device=device)
+        batch_bounds = []
+
+        for x in seed:
+            batch_bounds.append( scipy.optimize.brentq(gmm_helpers.get_b, 0, 10000., args = (x, gmm, b)) )
+        batch_bounds = torch.tensor(batch_bounds, device=device)
+        bounds.append(batch_bounds.clone().cpu())
+
+        batch_stats = []
+        for i, model in enumerate(model_list):
+            adv_noise, _ = adv.gen_pca_noise(model, device, seed, pca, 
+                                             epsilon=batch_bounds, perturb=True, 
+                                             restarts=restarts, steps=steps, alpha=alpha)
+            batch_stats.append(model(adv_noise).max(1)[0].exp().detach().cpu().clone())
+            
+        batch_stats = torch.stack(batch_stats, 0)
+        stats.append(batch_stats.clone())
+
+    stats = torch.cat(stats, -1)
+    bounds = torch.cat(bounds, 0)
+    
+    return stats, bounds

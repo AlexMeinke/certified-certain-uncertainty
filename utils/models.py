@@ -35,12 +35,13 @@ class PCAMetric(nn.Module):
         self.min_sv = self.singular_values[0] / min_sv_factor
         self.singular_values[self.singular_values<self.min_sv] = self.min_sv
         self.singular_values = nn.Parameter(self.singular_values, requires_grad=False)
+        self.singular_values_sqrt = nn.Parameter(self.singular_values.sqrt(), requires_grad=False)
         
         self.norm_const = self.singular_values.log().sum()
         
     def forward(self, x, y, dim=None):
         rotated_dist = torch.einsum("ijk,lk->ijl", (x-y, self.comp_vecs))
-        rescaled_dist = rotated_dist / self.singular_values[None,None,:]
+        rescaled_dist = rotated_dist / self.singular_values_sqrt[None,None,:]
         return rescaled_dist.norm(dim=2, p=self.p)
 
     
@@ -48,16 +49,17 @@ class MyPCA():
     def __init__(self, comp_vecs, singular_values, shape):
         self.comp_vecs = comp_vecs
         self.singular_values = singular_values
+        self.singular_values_sqrt = singular_values.sqrt()
         self.shape = tuple(shape)
         self.D = torch.tensor(shape).prod().item()
         
     def inv_trans(self, x):
-        x = ( (x * self.singular_values[None,:] ) @ self.comp_vecs.inverse() )
+        x = ( (x * self.singular_values_sqrt[None,:] ) @ self.comp_vecs.inverse() )
         return x.view(tuple([x.shape[0]]) + self.shape)
     
     def trans(self, x):
         x = x.view(-1, self.D)
-        return ( (x@self.comp_vecs) / self.singular_values[None,:] )
+        return ( (x@self.comp_vecs) / self.singular_values_sqrt[None,:] )
     
     
 class LossModel(nn.Module):
@@ -207,7 +209,7 @@ class GMM(MixtureModel):
         :param D: number of features
         """
         super().__init__(K, D, mu, logvar, alpha, metric)
-        self.norm_const = .5 * torch.tensor(2*np.pi).log() * self.D + metric.norm_const
+        self.norm_const = .5 * torch.tensor(2*np.pi).log() * self.D + .5 * metric.norm_const
 
     def forward(self, X):
         """
@@ -293,6 +295,17 @@ class LeNetMadry(nn.Module):
         x = self.fc2(x)
         x = F.log_softmax(x, dim=1)
         return x
+    
+
+def get_logits_LeNet(model, x):
+    x = F.relu(model.conv1(x))
+    x = F.max_pool2d(x, 2, 2)
+    x = F.relu(model.conv2(x))
+    x = F.max_pool2d(x, 2, 2)
+    x = x.view(-1, 7*7*64)
+    x = F.relu(model.fc1(x))
+    x = model.fc2(x)
+    return x
 
     
 class RobustModel(nn.Module):
@@ -321,3 +334,17 @@ class RobustModel(nn.Module):
         b2 = torch.logsumexp(a2, 0).squeeze()[:,None]
 
         return b1-b2
+    
+
+class TwoMoonsNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(2, 32)
+        self.fc2 = nn.Linear(64, 1)
+        
+    def forward(self, x):
+        x = F.ReLU(self.fc1(x))
+        x = F.ReLU(self.fc2(x))
+        return torch.sigmoid(x)
+        
+        

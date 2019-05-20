@@ -4,6 +4,7 @@ import torch
 import utils.models as models
 import utils.dataloaders as dl
 
+
 def find_lam(gmm, percentile, dataloader):
     X = []
     for i, (x, _) in enumerate(dataloader):
@@ -13,6 +14,7 @@ def find_lam(gmm, percentile, dataloader):
     X = torch.cat(X, 0)
     lam = np.percentile(X.numpy(), percentile)
     return lam
+
 
 def rescale(gmm, percentile, dataloader):
     m2 = gmm.logvar.exp().mean().detach()
@@ -26,3 +28,18 @@ def rescale(gmm, percentile, dataloader):
     target_m = np.percentile(m.numpy(), 100 - percentile)
     gmm.logvar.data += (target_m/m2).log()
     return gmm
+
+
+def get_b(r, x, gmm, b=1.):
+    x = x.view(-1)
+    d = gmm.metric(gmm.mu[None,:,:], x.view(-1)[None, None,:]).squeeze()
+
+    var = gmm.logvar.exp()
+    norm_const = .5*gmm.D*gmm.logvar + gmm.norm_const
+
+    exponent = torch.stack([(d - r), torch.zeros_like(var)], 0).max(0)[0]
+    
+    exponent = exponent**2 / (2*var)
+    
+    bound = torch.logsumexp(gmm.alpha - norm_const - exponent, 0).detach().cpu().item() - np.log(b)
+    return bound

@@ -133,8 +133,8 @@ def train_CEDA_gmm(model, device, train_loader, noise_loader, optimizer, epoch, 
     log_p_in = torch.tensor(p_in, device=device).log()
     log_p_out = torch.tensor(p_out, device=device).log()
     
-    enum = zip(enumerate(train_loader),enumerate(noise_loader))
-    for ((batch_idx, (data, target)), (_, (noise, _))) in enum:
+    enum = enumerate(train_loader)
+    for batch_idx, (data, target) in enum:
         data, target = data.to(device), target.to(device)
         
         noise = torch.rand_like(data)    
@@ -164,6 +164,7 @@ def train_CEDA_gmm(model, device, train_loader, noise_loader, optimizer, epoch, 
         train_loss += loss.item()
         _, predicted = output.max(1)
         correct += predicted.eq(target).sum().item()
+
         if (batch_idx % verbose == 0) and verbose>0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),

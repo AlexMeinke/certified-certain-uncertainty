@@ -94,6 +94,9 @@ else:
                      +'_lr' + str(hps.lr)
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type))
+
+if hps.decay!=5e-4:
+    saving_string += '_decay' + str(hps.decay)
 if hps.warmstart!='None':
     saving_string += '_warmstart'
 if hps.train_type=='ACET':

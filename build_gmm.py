@@ -49,7 +49,7 @@ X = torch.cat(X, 0)
 X = X[:hps.data_used] #needed to keep memory of distance matrix below 800 GB
 
 if hps.PCA:
-    metric = models.PCAMetric( X, p=2, min_sv_factor=1e5)
+    metric = models.PCAMetric( X, p=2, min_sv_factor=1e6)
     X = ( (X@metric.comp_vecs.t()) / metric.singular_values_sqrt[None,:] )
 else:
     metric = models.LpMetric()

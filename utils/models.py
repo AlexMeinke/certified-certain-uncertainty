@@ -62,38 +62,6 @@ class MyPCA():
         return ( (x@self.comp_vecs) / self.singular_values_sqrt[None,:] )
     
     
-class LossModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 32, 5, 1, padding=2)
-        
-    def forward(self, x):
-        x = x.view(-1,1,28,28)
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2, 2).view(-1,14*14*32)
-        return x
-
-    
-class PerceptualMetric(nn.Module):
-    def __init__(self, model, p=2):
-        super().__init__()
-        self.model = model
-        self.p = p
-        
-    def forward(self, x, y, dim=None):
-        return (self.model(x)[None,:,:]-self.model(y)[:,None,:]).norm(p=self.p, dim=dim)
-
-    
-class PerceptualPCA(nn.Module):
-    def __init__(self, model, pca, p=2):
-        super().__init__()
-        self.model = model
-        self.pca = pca
-        
-    def forward(self, x, y, dim=None):
-        return self.pca(self.model(x)[None,:,:], self.model(y)[:,None,:])
-    
-    
 class MixtureModel(nn.Module):
     
     def __init__(self, K, D, mu=None, logvar=None, alpha=None, metric=LpMetric()):
@@ -227,31 +195,6 @@ class GMM(MixtureModel):
         bound = (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
                 - .5* ( L**2/(2*var) ) - self.norm_const )
         return torch.logsumexp(bound.squeeze(),dim=0)
-                    
-
-class QuadraticMixtureModel(MixtureModel):
-    def __init__(self, K, D, mu=None, logvar=None, alpha=None, metric=LpMetric()):
-        """
-        Initializes means, variances and weights randomly
-        :param K: number of centroids
-        :param D: number of features
-        """
-        super().__init__(K, D, mu, logvar, alpha, metric)
-
-    def forward(self, X):
-        """
-        Compute the likelihood of each data point under each centroid
-        :param X: design matrix (examples, features) (N,D)
-        :return likelihoods: (K, examples) (K, N)
-        """
-        a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
-        var = self.logvar[:,None].exp()
-        return (self.alpha[:,None] - ( 1+ a/var ).log() )
-        
-    def calculate_bound(self, L):
-        var = self.logvar[:,None].exp()
-        bound = ( self.alpha[:,None] - ( 1 + L**2/var ).log() ).squeeze()
-        return torch.logsumexp(bound, dim=0)
 
     
 class LeNet(nn.Module):
@@ -295,24 +238,6 @@ class LeNetMadry(nn.Module):
         x = self.fc2(x)
         x = F.log_softmax(x, dim=1)
         return x
-    
-
-class LeNetODIN(nn.Module):
-    def __init__(self, model, temperature):
-        super().__init__()
-        self.temperature = temperature
-        self.model = model
-        
-    def forward(self, x):
-        x = F.relu(self.model.conv1(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = F.relu(self.model.conv2(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = x.view(-1, 7*7*64)
-        x = F.relu(self.model.fc1(x))
-        x = self.model.fc2(x)
-        x = F.log_softmax(x / self.temperature, dim=1)
-        return x
 
     
 class RobustModel(nn.Module):
@@ -353,5 +278,3 @@ class TwoMoonsNet(nn.Module):
         x = F.ReLU(self.fc1(x))
         x = F.ReLU(self.fc2(x))
         return torch.sigmoid(x)
-        
-        

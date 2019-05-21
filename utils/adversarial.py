@@ -42,6 +42,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
 
 def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, steps=40, alpha=0.01):
     batch_size = seed.shape[0]
+    orig_data = seed.clone()
     if restarts>1:
         data = seed.clone()
         losses = -100000.*torch.ones(batch_size, device=device)
@@ -49,15 +50,16 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
                                                      restarts=1, perturb=True, steps=steps, alpha=alpha)
         index = losses < current_losses
         data[index] = current_data[index]
+        losses[index] = current_losses[index]
         return data, losses
         
     else:
         with torch.no_grad():
             alpha = alpha * torch.ones(batch_size,1, device=device)
 
-            orig_data_pca = pca.trans(seed)
-            prev_data_pca = pca.trans(seed).to(device)
-            data_pca = pca.trans(seed).requires_grad_()
+            orig_data_pca = pca.trans(seed.clone())
+            prev_data_pca = pca.trans(seed.clone()).to(device)
+            data_pca = pca.trans(seed.clone()).requires_grad_()
 
             if perturb:
                 perturbation = epsilon[:,None]*(torch.rand_like(prev_data_pca) - .5)
@@ -71,11 +73,9 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
             with torch.enable_grad():
                 y = model(pca.inv_trans(data_pca))
                 losses = y.max(1)[0]
-                losses.sum().backward()
+                grad = torch.autograd.grad (losses.sum(), data_pca)[0]
 
             with torch.no_grad():
-                grad = data_pca.grad
-
                 regret_index = losses < prev_losses
                 alpha[regret_index] /= 2.
                 data_pca[regret_index] = prev_data_pca[regret_index]
@@ -114,10 +114,17 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
                     data_pca = orig_data_pca + delta
 
                     data = pca.inv_trans(data_pca)
-                    data = torch.clamp(data, 0, 1)
+                    data = torch.clamp(data, 0, 1).detach()
                     data_pca = pca.trans(data)
-        y = model(data)
-        losses = y.max(1)[0]
+                    
+        with torch.no_grad():
+            y = model(data)
+            losses = y.max(1)[0]
+
+            orig_losses = model(orig_data).max(1)[0]
+            index = orig_losses>losses
+            data[index] = orig_data[index]
+            losses[index] = losses[index]
         return data, losses    
     
 

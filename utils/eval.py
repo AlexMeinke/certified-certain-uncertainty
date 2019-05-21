@@ -10,6 +10,7 @@ import utils.dataloaders as dl
 import utils.models as models
 import utils.gmm_helpers as gmm_helpers
 
+
 def test_metrics(model, device, in_loader, out_loader):
     with torch.no_grad():
         model.eval()
@@ -43,11 +44,15 @@ def test_metrics(model, device, in_loader, out_loader):
 def evaluate_model(model, device, base_loader, loaders):
     metrics = []
     mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
-    metrics.append(['orig', mmc, '-', '-'])
+    # metrics.append(['orig', mmc, '-', '-'])
+    metrics.append(['orig', mmc, 0.])
     for (name, data_loader) in loaders:
         mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
-        metrics.append([name, mmc, auroc, fp95])
-    df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUROC', 'FPR@95'])
+        # metrics.append([name, mmc, auroc, fp95])
+        metrics.append([name, mmc, auroc])
+
+    # df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUROC', 'FPR@95'])
+    df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUROC'])
     return df.set_index('DataSet')
 
 
@@ -57,14 +62,16 @@ def write_log(df, writer, epoch=0):
             writer.add_scalar('AUROC/'+i, df.loc[i]['AUROC'], epoch)
             writer.add_scalar('MMC/'+i, df.loc[i]['MMC'], epoch)
     
-
     
 def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=None, epoch=0):
-    NoiseLoader = loaders[-1][1]
+
     if load_adversaries:
+        NoiseLoader = loaders[-1][1]
         print('[INFO] Loading Adversaries...')
         AdversarialNoiseLoader = adv.create_adv_noise_loader(model, NoiseLoader, device, batches=5)
-        AdversarialSampleLoader = adv.create_adv_sample_loader(model, dl.datasets_dict[dataset](train=False), device, batches=5)
+        AdversarialSampleLoader = adv.create_adv_sample_loader(model, 
+                                                               dl.datasets_dict[dataset](train=False),
+                                                               device, batches=5)
         temp = loaders + (
             [
              ('Adv. Noise', AdversarialNoiseLoader ),
@@ -80,7 +87,9 @@ def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=Non
 
 
 def aggregate_adv_stats(model_list, gmm, device, shape, classes=10, 
-                        batches=10, batch_size=100, steps=200, restarts=10, alpha=1., lam=1.):
+                        batches=10, batch_size=100, steps=200, 
+                        restarts=10, alpha=1., lam=1.):
+    
     pca = models.MyPCA(gmm.metric.comp_vecs.t(), gmm.metric.singular_values, shape)
     
     f = 2.

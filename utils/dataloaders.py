@@ -126,9 +126,31 @@ def Noise(dataset, train=True, batch_size=None):
         dataset = datasets.SVHN('../data', split='train' if train else 'test', transform=transform)
     elif dataset=='CIFAR10':
         dataset = datasets.CIFAR10('../data', train=train, transform=transform)
+    elif dataset=='CIFAR100':
+        dataset = datasets.CIFAR100('../data', train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=False, num_workers=4)
     loader = PrecomputeLoader(loader, batch_size=batch_size, shuffle=True)
+    return loader
+
+
+def UniformNoise(dataset, train=False, batch_size=None):
+    if batch_size==None:
+        if train:
+            batch_size=train_batch_size
+        else:
+            batch_size=test_batch_size
+    import torch.utils.data as data_utils
+    
+    if dataset in ['MNIST', 'FMNIST']:
+        shape = (1, 28, 28)
+    elif dataset in ['SVHN', 'CIFAR10', 'CIFAR100']:
+        shape = (3, 32, 32)
+        
+    data = torch.rand((10*batch_size,) + shape)
+    train = data_utils.TensorDataset(data, torch.zeros_like(data))
+    loader = torch.utils.data.DataLoader(train, batch_size=batch_size, 
+                                         shuffle=False, num_workers=1)
     return loader
 
 

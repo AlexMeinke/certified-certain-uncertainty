@@ -24,7 +24,7 @@ class MNIST_params():
 class FMNIST_params():
     def __init__(self, augm_flag=True, batch_size=128):
         # self.base_model = models.LeNetMadry()
-        self.base_model = resnet.ResNet18Gray()
+        self.base_model = resnet.ResNet18(num_of_channels=1)
         self.train_loader = dl.FMNIST(train=True, batch_size=128, augm_flag=augm_flag)
         self.cali_loader = dl.FMNIST(train=True, batch_size=128, augm_flag=False)
         self.test_loader = dl.FMNIST(train=False, augm_flag=False)
@@ -80,7 +80,7 @@ class CIFAR10_params():
         
 class CIFAR100_params():
     def __init__(self, augm_flag=True, batch_size=128):
-        self.base_model = resnet.ResNet18_100()
+        self.base_model = resnet.ResNet18(num_classes=100)
         self.train_loader = dl.CIFAR100(train=True, batch_size=128, augm_flag=augm_flag)
         self.cali_loader = dl.CIFAR100(train=True, batch_size=128, augm_flag=False)
         self.test_loader = dl.CIFAR100(train=False)

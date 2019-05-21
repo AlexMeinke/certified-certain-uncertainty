@@ -93,45 +93,13 @@ class ResNet(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.linear(out)
         return F.log_softmax(out, dim=1)
-    
-
-def get_logits_resnet(model, x):
-    out = F.relu(model.bn1(model.conv1(x)))
-    out = model.layer1(out)
-    out = model.layer2(out)
-    out = model.layer3(out)
-    out = model.layer4(out)
-    out = F.avg_pool2d(out, 4)
-    out = out.view(out.size(0), -1)
-    out = model.linear(out)
-    return out
 
     
-def ResNet18():
-    return ResNet(BasicBlock, [2,2,2,2])
+def ResNet18(num_of_channels=3, num_classes=10):
+    return ResNet(BasicBlock, [2,2,2,2], 
+                  num_of_channels=num_of_channels, 
+                  num_classes=num_classes)
 
-def ResNet18Gray():
-    return ResNet(BasicBlock, [2,2,2,2], num_of_channels=1)
 
 def ResNet18_100():
     return ResNet(BasicBlock, [2,2,2,2], num_classes=100)
-
-def ResNet34():
-    return ResNet(BasicBlock, [3,4,6,3])
-
-def ResNet50():
-    return ResNet(Bottleneck, [3,4,6,3])
-
-def ResNet101():
-    return ResNet(Bottleneck, [3,4,23,3])
-
-def ResNet152():
-    return ResNet(Bottleneck, [3,8,36,3])
-
-
-def test():
-    net = ResNet18()
-    y = net(torch.randn(1,3,32,32))
-    print(y.size())
-
-# test()

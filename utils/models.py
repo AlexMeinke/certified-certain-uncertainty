@@ -297,15 +297,22 @@ class LeNetMadry(nn.Module):
         return x
     
 
-def get_logits_LeNet(model, x):
-    x = F.relu(model.conv1(x))
-    x = F.max_pool2d(x, 2, 2)
-    x = F.relu(model.conv2(x))
-    x = F.max_pool2d(x, 2, 2)
-    x = x.view(-1, 7*7*64)
-    x = F.relu(model.fc1(x))
-    x = model.fc2(x)
-    return x
+class LeNetODIN(nn.Module):
+    def __init__(self, model, temperature):
+        super().__init__()
+        self.temperature = temperature
+        self.model = model
+        
+    def forward(self, x):
+        x = F.relu(self.model.conv1(x))
+        x = F.max_pool2d(x, 2, 2)
+        x = F.relu(self.model.conv2(x))
+        x = F.max_pool2d(x, 2, 2)
+        x = x.view(-1, 7*7*64)
+        x = F.relu(self.model.fc1(x))
+        x = self.model.fc2(x)
+        x = F.log_softmax(x / self.temperature, dim=1)
+        return x
 
     
 class RobustModel(nn.Module):

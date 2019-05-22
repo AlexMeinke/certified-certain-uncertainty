@@ -25,12 +25,14 @@ parser.add_argument('--datasets', nargs='+', type=str, required=True,
 
 hps = parser.parse_args()
 
-
+datasets = hps.datasets
 steps = hps.steps
 alpha = hps.alpha
 restarts = hps.restarts
 batches = hps.batches
-batch_size = batch_size
+batch_size = hps.batch_size
+
+device = torch.device('cuda:' + str(hps.gpu))
 
 saving_string = ('samples_steps' + str(steps) 
                  + '_alpha' + str(alpha) 
@@ -68,8 +70,6 @@ def get_auroc(model_list, model_params, stats, device):
         conf_list.append(conf)
     return auroc, success_rate, conf_list
 
-device = torch.device('cuda:' + str(hps.device))
-datasets = ['MNIST', 'FMNIST']
 
 auroc_vec = []
 mmc_vec = []
@@ -84,20 +84,22 @@ for dataset in datasets:
 
     shape = enumerate(model_params.cali_loader).__next__()[1][0][0].shape
     
-    stats, bounds = ev.aggregate_adv_stats(model_list, gmm, device, 
+    stats, bounds, seeds, samples = ev.aggregate_adv_stats(model_list, gmm, device, 
                                            shape, classes=model_params.classes, 
                                            batches=batches, batch_size=batch_size, 
                                            steps=steps, 
                                            restarts=restarts, alpha=alpha)
+    cont  = ev.StatsContainer(stats, bounds, seeds, samples)
+    torch.save(cont, 'results/backup/'+saving_string+'_dataset.pth')
     auroc, success_rate, conf = get_auroc(model_list, model_params, stats, device)
     
     auroc_vec.append(auroc)
     success_rate_vec.append(success_rate)
-    mmc_vec.append([c.mean() for c in conf])
+    mmc_vec.append([stats[i].mean() for i in range(len(model_list))])
     
-stats = torch.stack([torch.tensor(mmc_vec),
-            torch.tensor(success_rate_vec),
-            torch.tensor(auroc_vec)], 2).transpose(0,1)
+stats = torch.stack([torch.tensor(mmc_vec), 
+                     torch.tensor(success_rate_vec),
+                     torch.tensor(auroc_vec)], 2).transpose(0,1)
 
 df_list = []
 

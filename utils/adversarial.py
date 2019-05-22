@@ -162,6 +162,7 @@ def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=
             data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
     return data.detach()
 
+
 def create_adv_noise_loader(model, dataloader, device, batches=50):
     new_data = []
     for batch_idx, (data, target) in enumerate(dataloader):
@@ -175,6 +176,7 @@ def create_adv_noise_loader(model, dataloader, device, batches=50):
 
     adv_noise_set = data_utils.TensorDataset(new_data, torch.zeros(len(new_data),10))
     return data_utils.DataLoader(adv_noise_set, batch_size=100, shuffle=False)
+
 
 def create_adv_sample_loader(model, dataloader, device, batches=50):
     new_data = []

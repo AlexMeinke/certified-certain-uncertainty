@@ -28,23 +28,20 @@ parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_c
 parser.add_argument('--gpu', type=int, default=3, help='GPU index.')
 parser.add_argument('--lr', type=float, default=None, help='initial learning rate.')
 parser.add_argument('--lr_gmm', type=float, default=None, help='initial learning rate.')
-parser.add_argument('--lam', type=float, default=0., help='log of lambda.')
+parser.add_argument('--loglam', type=float, default=0., help='log of lambda.')
 parser.add_argument('--n', type=int, default=100, help='number of centroids.')
 parser.add_argument('--decay', type=float, default=5e-4, help='weight decay for base model.')
-parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, CIFAR10')
+parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, FMNIST, SVHN, CIFAR10, CIFAR100')
 parser.add_argument('--use_gmm', type=bool, default=False, help='use gmm in training or not')
 parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
-parser.add_argument('--steps', type=int, default=40, help='PGD steps in training ACET')
 parser.add_argument('--grad_vars', nargs='+', type=str, default=['mu', 'var'], 
                     help='variables in gmm that require grad')
 parser.add_argument('--augm_flag', type=bool, default=False, help='whether to use data augmentation')
 parser.add_argument('--gmm_path', type=str, default=None, 
                     help='path to gmm. If None, standard output of build_gmm.py is used.')
 parser.add_argument('--verbose', type=int, default=-1, help='display training progress in command line')
-parser.add_argument('--train_type', type=str, default='ACET', help='train on plain, CEDA or ACET')
+parser.add_argument('--train_type', type=str, default='plain', help='train on plain, CEDA or CEDA_GMM')
 parser.add_argument('--warmstart', type=str, default='None', help='warmstart base model on pretrained model')
-parser.add_argument('--rescaled', type=bool, default=False, help='use rescaled gmm')
-parser.add_argument('--percentile', type=float, default=1., help='percentile with which to choose lambda')
 parser.add_argument('--PCA', type=bool, default=False, help='use PCA in GMM metric')
 
 hps = parser.parse_args()
@@ -62,7 +59,6 @@ if hps.lr is None:
 
 args = ''
 args = (args + '_PCA') if hps.PCA else args
-args = (args + '_rescaled') if hps.rescaled else args
 
 loading_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_n' + str(hps.n)
@@ -73,12 +69,9 @@ loading_string = ('SavedModels/GMM/gmm_' + hps.dataset
 
 if hps.use_gmm:
     gmm = torch.load(loading_string)
-    if hps.lam==-1000000.:
-        hps.lam = gmm_helpers.find_lam(gmm, hps.percentile, model_params.cali_loader)
-        print('[INFO] chose loglambda as ' + str(hps.lam))
         
     saving_string = ('gmm_'+ args + hps.dataset
-                     +'_lam' + str(hps.lam)
+                     +'_lam' + str(hps.loglam)
                      +'_n' + str(hps.n)
                      +'_lr' + str(hps.lr)
                      +'_lrgmm' + str(hps.lr_gmm)
@@ -95,8 +88,6 @@ else:
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type))
 
-if hps.decay!=5e-4:
-    saving_string += '_decay' + str(hps.decay)
 if hps.warmstart!='None':
     saving_string += '_warmstart'
 if hps.train_type=='ACET':
@@ -110,7 +101,7 @@ if hps.use_gmm:
     gmm.mu.requires_grad = ('mu' in hps.grad_vars)
     gmm.logvar.requires_grad = ('var' in hps.grad_vars)
     gmm.alpha.requires_grad = ('alpha' in hps.grad_vars)
-    model = models.RobustModel(base_model, gmm, hps.lam, 
+    model = models.RobustModel(base_model, gmm, hps.loglam, 
                                dim=model_params.dim, classes=model_params.classes).to(device)
     model.loglam.requires_grad = False
 else:
@@ -130,31 +121,18 @@ if hps.dataset=='MNIST':
 else: 
     optimizer = optim.SGD(param_groups, momentum=0.9)
 
+lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.loglam)
 
-lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.lam)
-
-prev_acc = 0.
 
 for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
 
-    torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
+
     
-    trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader, 
-                                  model_params.loaders[-1][1], 
-                                  optimizer, epoch, lam=lam, epsilon=model_params.epsilon,
-                                  steps=hps.steps, verbose=hps.verbose)
-    if hps.train_type=='ACET':
-        if trainloss != trainloss:
-            model = torch.load('Checkpoints/' + saving_string+ '.pth')
-            print('[Warning] NaN encountered, Reloaded Checkpoint: ' + saving_string)
-        elif (correct < .9*prev_acc):
-            model = torch.load('Checkpoints/' + saving_string+ '.pth')
-            print('[Warning] Loss increased, Reloaded Checkpoint: ' + saving_string)
-        else:
-            prev_acc = correct
+    trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader,  
+                                  optimizer, epoch, lam=lam, verbose=hps.verbose)
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)
@@ -163,11 +141,7 @@ for epoch in range(hps.epochs):
         writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
         writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
         writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
-   # if (epoch)%10==7:
-   #     df = ev.evaluate(model, device, hps.dataset, model_params.loaders, writer=writer, epoch=epoch)
-
-# df = ev.evaluate(model, device, hps.dataset, model_params.loaders)
-# df.to_csv('results/'+saving_string+'.csv')
+        torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
 
 
 model = model.to('cpu')

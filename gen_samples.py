@@ -1,11 +1,15 @@
 import torch
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy
 
 import utils.models as models
 import utils.plotting as plotting
 import utils.adversarial as adv
 import utils.eval as ev
+import utils.gmm_helpers as gmm_helpers 
 import model_params as params
 import utils.resnet_orig as resnet
 import model_paths
@@ -69,8 +73,8 @@ for j_row, dataset in enumerate(datasets):
 
     for model in model_list:
         adv_noise, loss = adv.gen_pca_noise(model, device, seed, pca, batch_bounds, 
-                                              restarts=restarts, perturb=True, 
-                                             steps=steps, alpha=alpha)
+                                            restarts=restarts, perturb=True, 
+                                            steps=steps, alpha=alpha)
         noise_list.append(adv_noise)
         
     Y = [model(noise).max(1) for (noise, model) in zip(noise_list, model_list)]

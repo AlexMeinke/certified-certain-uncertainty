@@ -123,13 +123,13 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
         samples.append(batch_samples.clone())
 
     seeds = torch.cat(seeds, 0)
-    samples = torch.cat(batch_samples, 0)
+    samples = torch.cat(samples, 0)
     stats = torch.cat(stats, -1)
     bounds = torch.cat(bounds, 0)
     
     return stats, bounds, seeds, samples
 
-class StatContainer(torch.nn.Module):
+class StatsContainer(torch.nn.Module):
     def __init__(self, stats, bounds, seeds, samples):
         self.stats = stats
         self.bounds = bounds

@@ -1,0 +1,14 @@
+\begin{tabular}{lrrrrrrrr}
+\toprule
+{} & \multicolumn{2}{l}{Base (TE: 4.66\%)} & \multicolumn{2}{l}{CEDA (TE: 5.03\%)} & \multicolumn{2}{l}{ODIN (TE: 4.69\%)} & \multicolumn{2}{l}{GMM (TE: 4.96\%)} \\
+{} &              MMC &  AUROC &              MMC &  AUROC &              MMC &  AUROC &             MMC &  AUROC \\
+DataSet      &                  &        &                  &        &                  &        &                 &        \\
+\midrule
+orig         &            0.984 &  0.000 &            0.985 &  0.000 &            0.422 &  0.000 &           0.983 &  0.000 \\
+MNIST        &            0.693 &  0.967 &            0.689 &  0.973 &            0.223 &  0.993 &           0.648 &  0.976 \\
+EMNIST       &            0.681 &  0.969 &            0.668 &  0.975 &            0.224 &  0.994 &           0.680 &  0.972 \\
+GrayCIFAR10  &            0.893 &  0.893 &            0.842 &  0.931 &            0.364 &  0.810 &           0.580 &  0.964 \\
+Noise        &            0.781 &  0.959 &            0.549 &  0.987 &            0.294 &  0.963 &           0.645 &  0.970 \\
+UniformNoise &            0.645 &  0.981 &            0.753 &  0.961 &            0.195 &  0.999 &           0.100 &  1.000 \\
+\bottomrule
+\end{tabular}

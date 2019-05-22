@@ -16,17 +16,17 @@ def test_metrics(model, device, in_loader, out_loader):
         model.eval()
         conf_in = []
         conf_out = []
-        count = 0.
-        for ((batch_idx, (data_in, _)), (_, (data_out, _))) in zip(enumerate(in_loader),enumerate(out_loader)):
-            count += 1
+
+        for data_in, _ in in_loader:
             data_in = data_in.to(device)
-            data_out = data_out.to(device)
-
             output_in = model(data_in).max(1)[0].exp()
-            output_out = model(data_out).max(1)[0].exp()
-
             conf_in.append(output_in)
+            
+        for data_out, _ in out_loader:    
+            data_out = data_out.to(device)
+            output_out = model(data_out).max(1)[0].exp()
             conf_out.append(output_out)
+            
         conf_in = torch.cat(conf_in)
         conf_out = torch.cat(conf_out)
         
@@ -37,7 +37,7 @@ def test_metrics(model, device, in_loader, out_loader):
         
         mmc = conf_out.mean().item()
         auroc = roc_auc_score(y_true, y_scores)
-        fp95 = ((conf_out > 0.95).sum().float()/(count*out_loader.batch_size)).item()
+        fp95 = ((conf_out > 0.95).float().mean().item())
         return mmc, auroc, fp95
 
     

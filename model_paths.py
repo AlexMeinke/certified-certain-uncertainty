@@ -18,7 +18,7 @@ class MNIST_models():
                     )
         
         self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'GMM']
+        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
 
         
 class FMNIST_models():
@@ -41,7 +41,7 @@ class FMNIST_models():
                     )
         
         self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'GMM']
+        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
        
     
 class SVHN_models():
@@ -64,7 +64,7 @@ class SVHN_models():
                     )
         
         self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'GMM']
+        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
 
 
 class CIFAR10_models():
@@ -87,7 +87,7 @@ class CIFAR10_models():
                     )
         
         self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'GMM']
+        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
 
 
 class CIFAR100_models():
@@ -110,7 +110,7 @@ class CIFAR100_models():
                     )
         
         self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'GMM']
+        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
 
 
 model_dict =  {'MNIST':          MNIST_models,

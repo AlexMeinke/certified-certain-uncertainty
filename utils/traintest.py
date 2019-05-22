@@ -15,11 +15,9 @@ def train_plain(model, device, train_loader, noise_loader, optimizer, epoch, lam
     
     p_in = 1. / (1. + lam)
     
-    enum = zip(enumerate(train_loader),enumerate(noise_loader))
-    for ((batch_idx, (data, target)), (_, (noise, _))) in enum:
+
+    for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-        
-        noise = torch.rand_like(data)
         
         output = model(data)
         
@@ -49,8 +47,7 @@ def train_CEDA(model, device, train_loader, noise_loader, optimizer, epoch, lam=
     p_in = 1. / (1. + lam)
     p_out = lam * p_in
     
-    enum = zip(enumerate(train_loader),enumerate(noise_loader))
-    for ((batch_idx, (data, target)), (_, (noise, _))) in enum:
+    for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         
         noise = torch.rand_like(data)

@@ -110,7 +110,8 @@ if hps.use_gmm:
     gmm.mu.requires_grad = ('mu' in hps.grad_vars)
     gmm.logvar.requires_grad = ('var' in hps.grad_vars)
     gmm.alpha.requires_grad = ('alpha' in hps.grad_vars)
-    model = models.RobustModel(base_model, gmm, hps.lam, dim=model_params.dim).to(device)
+    model = models.RobustModel(base_model, gmm, hps.lam, 
+                               dim=model_params.dim, classes=model_params.classes).to(device)
     model.loglam.requires_grad = False
 else:
     model = base_model.to(device)

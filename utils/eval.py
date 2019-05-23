@@ -113,17 +113,17 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
                                              epsilon=batch_bounds, perturb=True, 
                                              restarts=restarts, steps=steps, alpha=alpha)
             batch_stats.append(model(adv_noise).max(1)[0].exp().detach().cpu().clone())
-            batch_samples.append(adv_noise[0].detach().cpu())
+            batch_samples.append(adv_noise.detach().cpu())
             
-        seeds.append(seed[0].cpu())
+        seeds.append(seed.cpu())
         
         batch_samples = torch.stack(batch_samples, 0)
         batch_stats = torch.stack(batch_stats, 0)
         stats.append(batch_stats.clone())
         samples.append(batch_samples.clone())
 
-    seeds = torch.cat(seeds, 0)
-    samples = torch.cat(samples, 0)
+    seeds = torch.stack(seeds, 0)
+    samples = torch.stack(samples, 0)
     stats = torch.cat(stats, -1)
     bounds = torch.cat(bounds, 0)
     

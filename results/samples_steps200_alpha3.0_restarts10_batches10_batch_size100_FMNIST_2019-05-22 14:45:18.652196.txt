@@ -1,9 +1,0 @@
-\begin{tabular}{lrrrrrrrrrrrr}
-\toprule
-{} & \multicolumn{3}{l}{Base} & \multicolumn{3}{l}{CEDA} & \multicolumn{3}{l}{ODIN} & \multicolumn{3}{l}{CCU} \\
-{} &    MMC &     SR &  AUROC &    MMC &     SR &  AUROC &  MMC &     SR & AUROC &    MMC &   SR & AUROC \\
-DataSet &        &        &        &        &        &        &      &        &       &        &      &       \\
-\midrule
-FMNIST  &  0.983 &  0.804 &  0.815 &  0.982 &  0.268 &  0.903 &  0.9 &  0.187 &  0.75 &  0.981 &  0.0 &   1.0 \\
-\bottomrule
-\end{tabular}

@@ -24,6 +24,8 @@ parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
 parser.add_argument('--steps', type=int, default=200, help='num of attack steps.')
 parser.add_argument('--restarts', type=int, default=10, help='num of restarts in attack.')
 parser.add_argument('--alpha', type=float, default=3., help='initial step size.')
+parser.add_argument('--datasets', nargs='+', type=str, required=True, 
+                    help='datasets to run attack on.')
 
 hps = parser.parse_args()
 
@@ -38,7 +40,10 @@ saving_string = ('samples_steps' + str(steps)
                  + '_' + str(datetime.datetime.now())
                 )
 
-datasets = ['MNIST', 'FMNIST', 'SVHN', 'CIFAR10', 'CIFAR100']
+for ds in datasets:
+    saving_string += '_' + ds
+
+datasets = hps.datasets
 device = torch.device('cuda:' + str(hps.gpu))
 
 
@@ -101,7 +106,7 @@ for j_row, dataset in enumerate(datasets):
     for i in range(n):
         plt.subplot(plot_rows, n_plots, init+ n_plots*j_row + i)
         
-        if j_row==0:
+        if dataset=='MNIST':
             string = model_path.keys[i] + '\n'
         else:
             string = ''

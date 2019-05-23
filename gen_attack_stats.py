@@ -20,7 +20,7 @@ parser.add_argument('--alpha', type=float, default=3., help='initial step size.'
 parser.add_argument('--batches', type=int, default=10, help='number of batches to test on.')
 parser.add_argument('--batch_size', type=int, default=100, help='size of batches that one tests on.')
 parser.add_argument('--datasets', nargs='+', type=str, required=True, 
-                    help='variables in gmm that require grad')
+                    help='datasets to run attack on.')
 
 
 hps = parser.parse_args()
@@ -90,7 +90,7 @@ for dataset in datasets:
                                            steps=steps, 
                                            restarts=restarts, alpha=alpha)
     cont  = ev.StatsContainer(stats, bounds, seeds, samples)
-    torch.save(cont, 'results/backup/'+saving_string+'_dataset.pth')
+    torch.save(cont, 'results/backup/' + saving_string + '_' + dataset + '.pth')
     auroc, success_rate, conf = get_auroc(model_list, model_params, stats, device)
     
     auroc_vec.append(auroc)

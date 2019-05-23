@@ -5,6 +5,7 @@ import utils.eval as ev
 import pandas as pd
 import utils.traintest as tt
 
+import datetime
 import argparse
 
 parser = argparse.ArgumentParser(description='Parse arguments.', prefix_chars='-')
@@ -30,8 +31,10 @@ test_error = [100*(1.-acc) for acc in accuracies]
 keys = [key + ' (TE: {:.2f}%)'.format(te) for (te, key) in zip(test_error, model_path.keys)]
 df = pd.concat(results, axis=1, keys=keys)
 
-df.to_csv('results/' + hps.dataset +'.csv')
+time = str(datetime.datetime.now())
+df.to_csv('results/' + hps.dataset + time + '.csv')
+df.to_pickle('results/' + hps.dataset + time)
 
-file = open('results/' + hps.dataset + '.txt','w') 
+file = open('results/' + hps.dataset + time + '.txt','w') 
 file.write(df.round(3).to_latex())
 file.close() 

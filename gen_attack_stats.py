@@ -78,7 +78,7 @@ success_rate_vec = []
 for dataset in datasets:
     model_params = params.params_dict[dataset]()
     model_path = model_paths.model_dict[dataset]() 
-    model_list = [torch.load(file).to(device) for file in model_path.files]
+    model_list = [torch.load(file).to(device) for file in model_path.file_dict.values()]
     
     gmm = model_list[-1].mm
 
@@ -106,10 +106,10 @@ df_list = []
 for i in range(len(model_list)):
     df = pd.DataFrame(stats[i].numpy() )
     df.insert(0, 'A', pd.Series(datasets))
-    df.columns = ['DataSet', 'MMC', 'SR', 'AUROC']
+    df.columns = ['DataSet', 'MMC', 'SR', 'AUC']
     df_list.append(df.set_index('DataSet'))
     
-df = pd.concat(df_list, axis=1, keys=model_path.keys)
+df = pd.concat(df_list, axis=1, keys=list(model_path.file_dict.keys()))
 
 df.to_csv('results/' + saving_string + '.csv')
 

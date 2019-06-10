@@ -43,6 +43,7 @@ parser.add_argument('--verbose', type=int, default=-1, help='display training pr
 parser.add_argument('--train_type', type=str, default='plain', help='train on plain, CEDA or CEDA_GMM')
 parser.add_argument('--warmstart', type=str, default='None', help='warmstart base model on pretrained model')
 parser.add_argument('--PCA', type=bool, default=False, help='use PCA in GMM metric')
+parser.add_argument('--steps', type=int, default=40, help='steps in PGD attack')
 
 hps = parser.parse_args()
 
@@ -128,21 +129,18 @@ for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
-
-
-    
+ 
     trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader,  
                                   optimizer, epoch, lam=lam, verbose=hps.verbose)
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)
-    if (epoch)%5==3:
-        correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
-        writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
-        writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
-        writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
-        torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
 
+    correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
+    writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
+    writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
+    writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
+    torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
 
 model = model.to('cpu')
 if hps.use_gmm:

@@ -141,6 +141,7 @@ def aggregate_stats(model_list, device, shape, classes=10,
         
         batch_stats = []
         for i, model in enumerate(model_list):
+            model.eval()
             batch_stats.append(model(seed).max(1)[0].exp().detach().cpu().clone())
             
         batch_stats = torch.stack(batch_stats, 0)

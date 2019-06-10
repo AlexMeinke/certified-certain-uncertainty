@@ -13,17 +13,19 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
         prev_data = seed.to(device)
         data = seed.to(device).requires_grad_()
 
-        prev_losses = -100000.*torch.ones(batch_size, device=device)
+        prev_losses = -1e5*torch.ones(batch_size, device=device)
         prev_grad = torch.zeros_like(seed, device=device)
         
     for _ in range(steps):
         with torch.enable_grad():
             y = model(data)
-            losses = y.max(1)[0]
-            losses.sum().backward()
+            # losses = y.max(1)[0]
+            losses = y.sum(1)
+            grad = torch.autograd.grad(losses.sum(), data)[0].sign()
             
         with torch.no_grad():
-            grad = data.grad.sign()
+            regret_index = losses<prev_losses
+
             regret_index = losses<prev_losses
             alpha[regret_index] /= 2.
             data[regret_index] = prev_data[regret_index]
@@ -32,7 +34,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
             prev_losses=losses
             prev_data = data
             prev_grad = grad
-            
+
             data += alpha*grad
             delta = torch.clamp(data-orig_data, -epsilon, epsilon)
             data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
@@ -41,11 +43,12 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
 
 
 def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, steps=40, alpha=0.01):
+    model.eval()
     batch_size = seed.shape[0]
     orig_data = seed.clone()
     if restarts>1:
         data = seed.clone()
-        losses = -100000.*torch.ones(batch_size, device=device)
+        losses = -1e5*torch.ones(batch_size, device=device)
         current_data, current_losses = gen_pca_noise(model, device, seed, pca, epsilon,
                                                      restarts=1, perturb=True, steps=steps, alpha=alpha)
         index = losses < current_losses
@@ -66,7 +69,7 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
                 prev_data_pca += perturbation
                 data_pca += perturbation
 
-            prev_losses = -100000.*torch.ones(batch_size, device=device)
+            prev_losses = -1e5*torch.ones(batch_size, device=device)
             prev_grad = torch.zeros_like(data_pca, device=device)
 
         for _ in range(steps):
@@ -129,6 +132,7 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
     
 
 def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.001):
+    model.eval()
     correct_index = label[:,None]!=torch.arange(10)[None,:]
     with torch.no_grad():
         batch_size = seed.shape[0]

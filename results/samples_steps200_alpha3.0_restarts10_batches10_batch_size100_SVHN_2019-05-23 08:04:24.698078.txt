@@ -1,9 +1,0 @@
-\begin{tabular}{lrrrrrrrrrrrr}
-\toprule
-{} & \multicolumn{3}{l}{Base} & \multicolumn{3}{l}{CEDA} & \multicolumn{3}{l}{ODIN} & \multicolumn{3}{l}{CCU} \\
-{} &    MMC &     SR &  AUROC &    MMC &     SR &  AUROC &    MMC &     SR &  AUROC &  MMC &   SR & AUROC \\
-DataSet &        &        &        &        &        &        &        &        &        &      &      &       \\
-\midrule
-SVHN    &  0.975 &  0.854 &  0.638 &  0.993 &  0.925 &  0.615 &  0.982 &  0.645 &  0.677 &  0.1 &  0.0 &   1.0 \\
-\bottomrule
-\end{tabular}

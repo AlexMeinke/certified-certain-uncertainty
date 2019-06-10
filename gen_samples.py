@@ -40,11 +40,11 @@ saving_string = ('samples_steps' + str(steps)
                  + '_' + str(datetime.datetime.now())
                 )
 
-for ds in datasets:
-    saving_string += '_' + ds
-
 datasets = hps.datasets
 device = torch.device('cuda:' + str(hps.gpu))
+
+for ds in datasets:
+    saving_string += '_' + ds
 
 
 plt.figure(figsize=(10,10))
@@ -54,7 +54,7 @@ plot_rows = len(datasets)
 for j_row, dataset in enumerate(datasets):
     model_params = params.params_dict[dataset]()
     model_path = model_paths.model_dict[dataset]() 
-    model_list = [torch.load(file).to(device) for file in model_path.files]
+    model_list = [torch.load(file).to(device) for file in model_path.file_dict.values()]
     gmm = model_list[-1].mm
 
 
@@ -107,7 +107,7 @@ for j_row, dataset in enumerate(datasets):
         plt.subplot(plot_rows, n_plots, init+ n_plots*j_row + i)
         
         if dataset=='MNIST':
-            string = model_path.keys[i] + '\n'
+            string = list(model_path.file_dict.keys())[i] + '\n'
         else:
             string = ''
         

@@ -18,10 +18,10 @@ class MNIST_params():
              ('GrayCIFAR10', dl.GrayCIFAR10(train=False)),
              ('Noise', dl.Noise(dataset=self.data_name, batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(self.data_name, batch_size=batch_size))]
+        
         self.data_used = 60000
         self.epsilon = 0.3
         self.lr = 1e-3
-
         self.classes = 10
         
         
@@ -31,6 +31,8 @@ class FMNIST_params():
         self.data_name = 'FMNIST'
         
         self.base_model = resnet.ResNet18(num_of_channels=1)
+        # self.base_model = resnet.WideResNet(3, 1, num_of_channels=1)
+        
         self.train_loader = dl.FMNIST(train=True, batch_size=128, augm_flag=augm_flag)
         self.cali_loader = dl.FMNIST(train=True, batch_size=128, augm_flag=False)
         self.test_loader = dl.FMNIST(train=False, augm_flag=False)
@@ -40,10 +42,10 @@ class FMNIST_params():
              ('GrayCIFAR10', dl.GrayCIFAR10(train=False)),
              ('Noise', dl.Noise(dataset=self.data_name, batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
+        
         self.data_used = 60000
         self.epsilon = 0.3
         self.lr = 0.1
-
         self.classes = 10
 
         
@@ -61,10 +63,10 @@ class SVHN_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
+        
         self.data_used = 50000
         self.epsilon = 0.3
         self.lr = 0.1
-
         self.classes = 10
         
         
@@ -82,6 +84,7 @@ class CIFAR10_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
+        
         self.data_used = 50000
         self.epsilon = 0.3
         self.lr = 0.1
@@ -103,10 +106,10 @@ class CIFAR100_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
+        
         self.data_used = 50000
         self.epsilon = 0.3
         self.lr = 0.1
-
         self.classes = 100
        
     

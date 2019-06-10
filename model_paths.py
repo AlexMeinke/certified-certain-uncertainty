@@ -1,3 +1,6 @@
+import collections
+
+
 class MNIST_models():
     def __init__(self):
         file_joint = ('SavedModels/'
@@ -17,8 +20,13 @@ class MNIST_models():
                      'base_MNIST_lr0.001_augm_flagTrue_train_typeplain_ODIN.pth'
                     )
         
-        self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
+        file_ACET = ('SavedModels/base/'
+                     'base_MNIST_lr0.001_augm_flagTrue_train_typeACET_steps40.pth'
+                    )
+        
+        files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
+        keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
+        self.file_dict = collections.OrderedDict(zip(keys, files))
 
         
 class FMNIST_models():
@@ -40,8 +48,15 @@ class FMNIST_models():
                      'base_FMNIST_lr0.1_augm_flagTrue_train_typeplain_ODIN.pth'
                     )
         
-        self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
+        file_ACET = ('SavedModels/base/'
+                     'base_FMNIST_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+                    )
+        
+        file_ACET = 'Checkpoints/base_FMNIST_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+        
+        files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
+        keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
+        self.file_dict = collections.OrderedDict(zip(keys, files))
        
     
 class SVHN_models():
@@ -63,8 +78,15 @@ class SVHN_models():
                      'base_SVHN_lr0.1_augm_flagTrue_train_typeplain_ODIN.pth'
                     )
         
-        self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
+        file_ACET = ('SavedModels/base/'
+                     'base_SVHN_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+                    )
+        
+        file_ACET = 'Checkpoints/base_SVHN_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+        
+        files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
+        keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
+        self.file_dict = collections.OrderedDict(zip(keys, files))
 
 
 class CIFAR10_models():
@@ -86,8 +108,15 @@ class CIFAR10_models():
                      'base_CIFAR10_lr0.1_augm_flagTrue_train_typeplain_ODIN.pth'
                     )
         
-        self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
+        file_ACET = ('SavedModels/base/'
+                     'base_CIFAR10_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+                    )
+        
+        file_ACET = 'Checkpoints/base_CIFAR10_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+        
+        files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
+        keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
+        self.file_dict = collections.OrderedDict(zip(keys, files))
 
 
 class CIFAR100_models():
@@ -109,9 +138,16 @@ class CIFAR100_models():
                      'base_CIFAR100_lr0.1_augm_flagTrue_train_typeplain_ODIN.pth'
                     )
         
-        self.files = [file_base, file_CEDA, file_ODIN, file_joint]
-        self.keys = ['Base', 'CEDA', 'ODIN', 'CCU']
-
+        file_ACET = ('SavedModels/base/'
+                     'base_CIFAR100_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+                    )
+        
+        file_ACET = 'Checkpoints/base_CIFAR100_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
+        
+        files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
+        keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
+        self.file_dict = collections.OrderedDict(zip(keys, files))
+        
 
 model_dict =  {'MNIST':          MNIST_models,
                'FMNIST':         FMNIST_models,

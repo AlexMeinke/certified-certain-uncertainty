@@ -44,19 +44,19 @@ def test_metrics(model, device, in_loader, out_loader):
 def evaluate_model(model, device, base_loader, loaders):
     metrics = []
     mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
-    metrics.append(['orig', mmc, 0.])
+    metrics.append(['orig', 100*mmc, 0.])
     for (name, data_loader) in loaders:
         mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
-        metrics.append([name, mmc, auroc])
+        metrics.append([name, 100*mmc, 100*auroc])
 
-    df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUROC'])
+    df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUC'])
     return df.set_index('DataSet')
 
 
 def write_log(df, writer, epoch=0):
     for i in df.index:
         if i!='orig':
-            writer.add_scalar('AUROC/'+i, df.loc[i]['AUROC'], epoch)
+            writer.add_scalar('AUC/'+i, df.loc[i]['AUC'], epoch)
             writer.add_scalar('MMC/'+i, df.loc[i]['MMC'], epoch)
     
     
@@ -109,6 +109,7 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
 
         batch_stats = []
         for i, model in enumerate(model_list):
+            model.eval()
             adv_noise, _ = adv.gen_pca_noise(model, device, seed, pca, 
                                              epsilon=batch_bounds, perturb=True, 
                                              restarts=restarts, steps=steps, alpha=alpha)

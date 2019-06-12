@@ -1,6 +1,6 @@
 # Towards neural networks that provably know when they don't know
 
-This repository contains the code that was used to obtain the results reported in ARXIV REFERENCE. Using these techniques, one can train models that provably make low-confidence predictions far away from the training data.
+This repository contains the code that was used to obtain the results reported in ARXIV REFERENCE. In it we propose a *Certified Certain Uncertainty* (CCU) model with which one can train deep neural networks that provably make low-confidence predictions far away from the training data.
 
 ## Training the models
 

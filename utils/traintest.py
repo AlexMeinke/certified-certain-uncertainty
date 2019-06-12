@@ -167,7 +167,6 @@ def train_ACET(model, device, train_loader, optimizer, epoch, lam=1., verbose=-1
         noise = adv.gen_adv_noise(model, device, noise, epsilon=0.1, steps=40, step_size=0.01)
         model.train()
         
-        
         full_data = torch.cat([data, noise], 0)
         full_out = model(full_data)
         

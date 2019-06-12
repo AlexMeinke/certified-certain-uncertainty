@@ -89,22 +89,27 @@ for j_row, dataset in enumerate(datasets):
     noise = [noise[0] for noise in noise_list]
     
     n = len(pred)
-    n_plots = len(pred)+1
-    init = 2
+    n_plots = len(pred)
+    init = 1
     
-    plt.subplot(plot_rows, n_plots, 1 + n_plots*j_row)
-    plt.ylabel(dataset, rotation=90, horizontalalignment='left', va='center')
+    #plt.subplot(plot_rows, n_plots, 1 + n_plots*j_row)
+    #plt.ylabel(dataset, rotation=90, horizontalalignment='left', va='center')
     
-    if dataset in ['MNIST', 'FMNIST']:
-        plt.imshow(seed[0].squeeze().detach().cpu(), cmap='gray', interpolation='none')
-    elif dataset in ['CIFAR10', 'SVHN', 'CIFAR100']:
-        plt.imshow(seed[0].transpose(0,2).transpose(0,1).detach().cpu(), interpolation='none')
+    #if dataset in ['MNIST', 'FMNIST']:
+    #    plt.imshow(seed[0].squeeze().detach().cpu(), cmap='gray', interpolation='none')
+    #elif dataset in ['CIFAR10', 'SVHN', 'CIFAR100']:
+    #    plt.imshow(seed[0].transpose(0,2).transpose(0,1).detach().cpu(), interpolation='none')
 
-    plt.xticks([])
-    plt.yticks([])
+    #plt.xticks([])
+    #plt.yticks([])
         
     for i in range(n):
         plt.subplot(plot_rows, n_plots, init+ n_plots*j_row + i)
+        
+        if i==0:
+            # plt.ylabel(dataset, rotation=90, horizontalalignment='left', va='center')
+            plt.ylabel(' ' + dataset + '\n', rotation=90, horizontalalignment='left', va='center',
+                      fontsize=14, position=(0,0))
         
         if dataset=='MNIST':
             string = list(model_path.file_dict.keys())[i] + '\n'
@@ -125,7 +130,9 @@ for j_row, dataset in enumerate(datasets):
         plt.yticks([])
 
 #plt.subplots_adjust(left=0., bottom=0., right=1., top=1., wspace=.1, hspace=.1)
+plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=.12, hspace=None)
 plt.tight_layout()
 myplot = plt.gcf()
 
-myplot.savefig('results/' + saving_string + '.eps', format='eps')
+myplot.savefig('results/' + saving_string + '_sample' + '.eps', format='eps', 
+               bbox_inches = 'tight', pad_inches = 0)

@@ -52,8 +52,6 @@ class FMNIST_models():
                      'base_FMNIST_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
                     )
         
-        file_ACET = 'Checkpoints/base_FMNIST_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
-        
         files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
         keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
         self.file_dict = collections.OrderedDict(zip(keys, files))
@@ -81,8 +79,6 @@ class SVHN_models():
         file_ACET = ('SavedModels/base/'
                      'base_SVHN_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
                     )
-        
-        file_ACET = 'Checkpoints/base_SVHN_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
         
         files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
         keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
@@ -112,8 +108,6 @@ class CIFAR10_models():
                      'base_CIFAR10_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
                     )
         
-        file_ACET = 'Checkpoints/base_CIFAR10_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
-        
         files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
         keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']
         self.file_dict = collections.OrderedDict(zip(keys, files))
@@ -141,8 +135,6 @@ class CIFAR100_models():
         file_ACET = ('SavedModels/base/'
                      'base_CIFAR100_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
                     )
-        
-        file_ACET = 'Checkpoints/base_CIFAR100_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
         
         files = [file_base, file_CEDA, file_ACET, file_ODIN, file_joint]
         keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'CCU']

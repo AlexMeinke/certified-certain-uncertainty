@@ -41,7 +41,9 @@ saving_string = ('samples_steps' + str(steps)
                 )
 
 datasets = hps.datasets
-device = torch.device('cuda:' + str(hps.gpu))
+
+if torch.cuda.is_available():
+    device = torch.device('cuda:' + str(hps.gpu))
 
 for ds in datasets:
     saving_string += '_' + ds

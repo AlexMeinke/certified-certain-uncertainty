@@ -13,7 +13,6 @@ parser.add_argument('--n', type=int, default=100, help='number of Gaussians.')
 parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, CIFAR10.')
 parser.add_argument('--verbose', type=bool, default=False, help='whether to print current iteration.')
 parser.add_argument('--data_used', type=int, default=None, help='number of datapoints to be used.')
-parser.add_argument('--alg', type=str, default='scikit', help='which algorithm to use, [EM, scikit, EM-kmeans].')
 parser.add_argument('--augm_flag', type=bool, default=False, help='whether to use data augmentation.')
 parser.add_argument('--percentile', type=float, default=1., help='percentile for rescaling.')
 parser.add_argument('--PCA', type=bool, default=False, help='initialize for using in PCA metric.')
@@ -55,23 +54,16 @@ else:
     metric = models.LpMetric()
 
 gmm = models.GMM(hps.n, dim, metric=metric)
-if hps.alg=='EM':
-    gmm.find_solution(X, initialize=True, iterate=True, use_kmeans=False, verbose=hps.verbose)
-    gmm.alpha = nn.Parameter(gmm.alpha)
-elif hps.alg=='EM-kmeans':
-    gmm.find_solution(X, initialize=True, iterate=True, use_kmeans=True, verbose=hps.verbose)
-    gmm.alpha = nn.Parameter(gmm.alpha)
-elif hps.alg=='scikit':
-    clf = mixture.GaussianMixture(n_components=hps.n, 
-                                  covariance_type='spherical',
-                                  max_iter=500)
-    clf.fit(X)
-    mu = torch.tensor(clf.means_ ,dtype=torch.float)
-    logvar = torch.tensor(np.log(clf.covariances_) ,dtype=torch.float)
-    alpha = torch.tensor(np.log(clf.weights_) ,dtype=torch.float)
-    gmm = models.GMM(hps.n, dim, mu=mu, logvar=logvar, metric=metric)
-else:    
-    raise ValueError("Invalid algorithm "+ str(hps.alg))
+
+clf = mixture.GaussianMixture(n_components=hps.n, 
+                              covariance_type='spherical',
+                              max_iter=500)
+clf.fit(X)
+mu = torch.tensor(clf.means_ ,dtype=torch.float)
+logvar = torch.tensor(np.log(clf.covariances_) ,dtype=torch.float)
+alpha = torch.tensor(np.log(clf.weights_) ,dtype=torch.float)
+gmm = models.GMM(hps.n, dim, mu=mu, logvar=logvar, metric=metric)
+
     
 if hps.PCA:
     gmm.mu.data = ( (gmm.mu.data * metric.singular_values_sqrt[None,:] ) @ metric.comp_vecs.t().inverse() )

@@ -11,12 +11,13 @@ import argparse
 parser = argparse.ArgumentParser(description='Parse arguments.', prefix_chars='-')
 
 parser.add_argument('--dataset', type=str, required=True, help='Which dataset to use.')
-parser.add_argument('--gpu', type=int, default=3, help='GPU index.')
+parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
 
 hps = parser.parse_args()
 
-
-device = torch.device('cuda:' + str(hps.gpu))
+if torch.cuda.is_available():
+    device = torch.device('cuda:' + str(hps.gpu))
+    
 model_params = params.params_dict[hps.dataset]()
 model_path = model_paths.model_dict[hps.dataset]() 
 model_list = [torch.load(file).to(device) for file in model_path.file_dict.values()]

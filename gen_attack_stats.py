@@ -13,7 +13,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_chars='-')
 
-parser.add_argument('--gpu', type=int, default=3, help='GPU index.')
+parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
 parser.add_argument('--steps', type=int, default=200, help='num of attack steps.')
 parser.add_argument('--restarts', type=int, default=10, help='num of restarts in attack.')
 parser.add_argument('--alpha', type=float, default=3., help='initial step size.')
@@ -32,7 +32,8 @@ restarts = hps.restarts
 batches = hps.batches
 batch_size = hps.batch_size
 
-device = torch.device('cuda:' + str(hps.gpu))
+if torch.cuda.is_available():
+    device = torch.device('cuda:' + str(hps.gpu))
 
 saving_string = ('samples_steps' + str(steps) 
                  + '_alpha' + str(alpha) 

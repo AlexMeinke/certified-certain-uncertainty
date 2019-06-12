@@ -25,7 +25,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_chars='-')
 
-parser.add_argument('--gpu', type=int, default=3, help='GPU index.')
+parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
 parser.add_argument('--lr', type=float, default=None, help='initial learning rate.')
 parser.add_argument('--lr_gmm', type=float, default=None, help='initial learning rate.')
 parser.add_argument('--loglam', type=float, default=0., help='log of lambda.')
@@ -94,7 +94,9 @@ if hps.warmstart!='None':
 if hps.train_type=='ACET':
     saving_string += '_steps'+str(hps.steps)
 
-device = torch.device('cuda:' + str(hps.gpu))
+if torch.cuda.is_available():
+    device = torch.device('cuda:' + str(hps.gpu))
+
 writer = SummaryWriter('runs/'+saving_string+str(datetime.datetime.now()))
 
 if hps.use_gmm:

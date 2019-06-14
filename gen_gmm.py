@@ -14,7 +14,6 @@ parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, SVHN, C
 parser.add_argument('--verbose', type=bool, default=False, help='whether to print current iteration.')
 parser.add_argument('--data_used', type=int, default=None, help='number of datapoints to be used.')
 parser.add_argument('--augm_flag', type=bool, default=False, help='whether to use data augmentation.')
-parser.add_argument('--percentile', type=float, default=1., help='percentile for rescaling.')
 parser.add_argument('--PCA', type=bool, default=False, help='initialize for using in PCA metric.')
 
 hps = parser.parse_args()

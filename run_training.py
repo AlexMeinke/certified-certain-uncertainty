@@ -133,7 +133,8 @@ for epoch in range(hps.epochs):
             group['lr'] *= .1
  
     trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader,  
-                                  optimizer, epoch, lam=lam, verbose=hps.verbose)
+                                                          optimizer, epoch, lam=lam, verbose=hps.verbose,
+                                                          epsilon=model_params.epsilon)
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)

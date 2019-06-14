@@ -98,7 +98,7 @@ for dataset in datasets:
     success_rate_vec.append(success_rate)
     mmc_vec.append([stats[i].mean() for i in range(len(model_list))])
     
-stats = torch.stack([torch.tensor(mmc_vec), 
+stats = 100*torch.stack([torch.tensor(mmc_vec), 
                      torch.tensor(success_rate_vec),
                      torch.tensor(auroc_vec)], 2).transpose(0,1)
 
@@ -115,5 +115,5 @@ df = pd.concat(df_list, axis=1, keys=list(model_path.file_dict.keys()))
 df.to_csv('results/' + saving_string + '.csv')
 
 file = open('results/' + saving_string + '.txt','w') 
-file.write(df.round(3).to_latex())
+file.write(df.round(1).to_latex())
 file.close() 

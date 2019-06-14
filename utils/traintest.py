@@ -5,7 +5,8 @@ import utils.adversarial as adv
 import numpy as np
 
 
-def train_plain(model, device, train_loader, optimizer, epoch, lam=1., verbose=100):
+def train_plain(model, device, train_loader, optimizer, epoch, 
+                lam=1., verbose=100, noise_loader=None, epsilon=.3):
     # lam not necessarily needed but there to ensure that the 
     # learning rates on the base and the CEDA model are comparable
     
@@ -39,7 +40,8 @@ def train_plain(model, device, train_loader, optimizer, epoch, lam=1., verbose=1
     return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
   
     
-def train_CEDA(model, device, train_loader, optimizer, epoch, lam=1., verbose=100, noise_loader=None):
+def train_CEDA(model, device, train_loader, optimizer, epoch, 
+               lam=1., verbose=100, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
     model.train()
     
@@ -85,7 +87,8 @@ def train_CEDA(model, device, train_loader, optimizer, epoch, lam=1., verbose=10
     return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
 
 
-def train_CEDA_gmm(model, device, train_loader, optimizer, epoch, lam=1., verbose=100, noise_loader=None):
+def train_CEDA_gmm(model, device, train_loader, optimizer, epoch, 
+                   lam=1., verbose=100, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
     model.train()
     
@@ -144,7 +147,8 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch, lam=1., verbos
     return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
    
 
-def train_ACET(model, device, train_loader, optimizer, epoch, lam=1., verbose=-1, noise_loader=None):
+def train_ACET(model, device, train_loader, optimizer, epoch, 
+               lam=1., verbose=-1, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
     model.train()
     
@@ -164,7 +168,7 @@ def train_ACET(model, device, train_loader, optimizer, epoch, lam=1., verbose=-1
         if noise_loader is not None:
             noise = enum2.__next__()[1][0].to(device)
             
-        noise = adv.gen_adv_noise(model, device, noise, epsilon=0.1, steps=40, step_size=0.01)
+        noise = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=40, step_size=0.01)
         model.train()
         
         full_data = torch.cat([data, noise], 0)

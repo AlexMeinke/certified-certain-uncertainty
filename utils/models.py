@@ -48,13 +48,14 @@ class PCAMetric(nn.Module):
 class MyPCA():
     def __init__(self, comp_vecs, singular_values, shape):
         self.comp_vecs = comp_vecs
+        self.comp_vecs_inverse = self.comp_vecs.inverse()
         self.singular_values = singular_values
         self.singular_values_sqrt = singular_values.sqrt()
         self.shape = tuple(shape)
         self.D = torch.tensor(shape).prod().item()
         
     def inv_trans(self, x):
-        x = ( (x * self.singular_values_sqrt[None,:] ) @ self.comp_vecs.inverse() )
+        x = ( (x * self.singular_values_sqrt[None,:] ) @ self.comp_vecs_inverse )
         return x.view(tuple([x.shape[0]]) + self.shape)
     
     def trans(self, x):

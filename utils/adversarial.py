@@ -20,7 +20,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
         with torch.enable_grad():
             y = model(data)
             # losses = y.max(1)[0]
-            losses = y.sum(1)
+            losses = -y.sum(1)
             grad = torch.autograd.grad(losses.sum(), data)[0].sign()
             
         with torch.no_grad():
@@ -48,12 +48,15 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
     orig_data = seed.clone()
     if restarts>1:
         data = seed.clone()
-        losses = -1e5*torch.ones(batch_size, device=device)
-        current_data, current_losses = gen_pca_noise(model, device, seed, pca, epsilon,
-                                                     restarts=1, perturb=True, steps=steps, alpha=alpha)
-        index = losses < current_losses
-        data[index] = current_data[index]
-        losses[index] = current_losses[index]
+        losses = 1e5*torch.ones(batch_size, device=device)
+        for _ in range(restarts):
+            current_data, current_losses = gen_pca_noise(model, device, seed, pca, epsilon,
+                                                         restarts=1, perturb=True, steps=steps, alpha=alpha)
+            with torch.no_grad():
+                index = losses > current_losses
+                data[index] = current_data[index]
+
+                losses[index] = current_losses[index]
         return data, losses
         
     else:
@@ -69,37 +72,41 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
                 prev_data_pca += perturbation
                 data_pca += perturbation
 
-            prev_losses = -1e5*torch.ones(batch_size, device=device)
+            prev_losses = 1e5*torch.ones(batch_size, device=device)
             prev_grad = torch.zeros_like(data_pca, device=device)
 
         for _ in range(steps):
             with torch.enable_grad():
                 y = model(pca.inv_trans(data_pca))
-                losses = y.max(1)[0]
-                grad = torch.autograd.grad (losses.sum(), data_pca)[0]
+                # losses = y[correct_index].view(batch_size, 9).max(1)[0]
+                
+                losses = -y.max(1)[0]
+
+                grad = -torch.autograd.grad (losses.sum(), data_pca)[0]
 
             with torch.no_grad():
-                regret_index = losses < prev_losses
+                regret_index = losses > prev_losses
+
                 alpha[regret_index] /= 2.
                 data_pca[regret_index] = prev_data_pca[regret_index]
                 grad[regret_index] = prev_grad[regret_index]
-
+                
                 prev_losses=losses
                 prev_data_pca = data_pca
                 prev_grad = grad
-
+                
                 data_pca += alpha*grad
                 
                 delta = data_pca - orig_data_pca
                 N = delta.norm(dim=-1)
-
-                index = N>epsilon
+                
+                index = N > epsilon
 
                 delta[index] *= (epsilon[index] / N[index])[:, None]
-
-
+                
+                
                 data_pca = orig_data_pca + delta
-
+                
                 data = pca.inv_trans(data_pca)
                 data = torch.clamp(data, 0, 1)
                 data_pca = pca.trans(data).requires_grad_()
@@ -108,27 +115,27 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
             with torch.no_grad():
                     delta = data_pca - orig_data_pca
                     N = delta.norm(dim=-1)
-
+                    
                     index = N>epsilon
-
+                    
                     delta[index] *= (epsilon[index] / N[index])[:, None]
-
-
+                    
+                    
                     data_pca = orig_data_pca + delta
-
+                    
                     data = pca.inv_trans(data_pca)
                     data = torch.clamp(data, 0, 1).detach()
                     data_pca = pca.trans(data)
-                    
+
         with torch.no_grad():
             y = model(data)
             losses = y.max(1)[0]
-
+            
             orig_losses = model(orig_data).max(1)[0]
-            index = orig_losses>losses
+            index = orig_losses<losses
             data[index] = orig_data[index]
             losses[index] = losses[index]
-        return data, losses    
+        return data, losses
     
 
 def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.001):

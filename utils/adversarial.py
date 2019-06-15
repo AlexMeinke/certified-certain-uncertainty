@@ -116,7 +116,7 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
                     delta = data_pca - orig_data_pca
                     N = delta.norm(dim=-1)
                     
-                    index = N>epsilon
+                    index = N > epsilon
                     
                     delta[index] *= (epsilon[index] / N[index])[:, None]
                     
@@ -129,10 +129,11 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
 
         with torch.no_grad():
             y = model(data)
-            losses = y.max(1)[0]
+            losses = -y.max(1)[0]
             
-            orig_losses = model(orig_data).max(1)[0]
-            index = orig_losses<losses
+            orig_losses = -model(orig_data).max(1)[0]
+
+            index = orig_losses < losses
             data[index] = orig_data[index]
             losses[index] = losses[index]
         return data, losses

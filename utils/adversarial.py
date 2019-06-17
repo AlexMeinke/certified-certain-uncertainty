@@ -3,8 +3,25 @@ import torch.nn.functional as F
 import torch.utils.data as data_utils
 
 
-def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
+def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False, steps=40, step_size=0.01):
     model.eval()
+    batch_size = seed.shape[0]
+    orig_data = seed.clone()
+    
+    if restarts>1:
+        data = seed.clone()
+        losses = 1e5*torch.ones(batch_size, device=device)
+        for _ in range(restarts):
+            current_data, current_losses = gen_adv_noise(model, device, seed, epsilon=epsilon,
+                                                         restarts=1, perturb=True, 
+                                                         steps=steps)
+            with torch.no_grad():
+                index = losses > current_losses
+                data[index] = current_data[index]
+
+                losses[index] = current_losses[index]
+        return data, losses
+    
     with torch.no_grad():
         batch_size = seed.shape[0]
         alpha = step_size * torch.ones(batch_size,1,1,1, device=device)
@@ -12,21 +29,25 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
         orig_data = seed.to(device)
         prev_data = seed.to(device)
         data = seed.to(device).requires_grad_()
+        
+        if perturb:
+                perturbation = epsilon * (torch.rand_like(prev_data) - .5)
+                prev_data += perturbation
+                data += perturbation
 
-        prev_losses = -1e5*torch.ones(batch_size, device=device)
+        prev_losses = 1e5 * torch.ones(batch_size, device=device)
         prev_grad = torch.zeros_like(seed, device=device)
         
     for _ in range(steps):
         with torch.enable_grad():
             y = model(data)
             # losses = y.max(1)[0]
-            losses = -y.sum(1)
-            grad = torch.autograd.grad(losses.sum(), data)[0].sign()
+            losses = y.sum(1)
+            grad = -torch.autograd.grad(losses.sum(), data)[0].sign()
             
         with torch.no_grad():
-            regret_index = losses<prev_losses
+            regret_index = losses > prev_losses
 
-            regret_index = losses<prev_losses
             alpha[regret_index] /= 2.
             data[regret_index] = prev_data[regret_index]
             grad[regret_index] = prev_grad[regret_index]
@@ -35,11 +56,11 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, steps=40, step_size=0.01):
             prev_data = data
             prev_grad = grad
 
-            data += alpha*grad
+            data += alpha * grad
             delta = torch.clamp(data-orig_data, -epsilon, epsilon)
             data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
          
-    return data.detach()
+    return data.detach(), losses
 
 
 def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, steps=40, alpha=0.01):

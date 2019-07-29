@@ -82,8 +82,7 @@ def grid_search_variables(base_model, model_params, device):
     for T in temperatures:
         vec = []
         for eps in epsilons:
-            model = ModelODIN(model_dict[model_params.data_name](base_model, T), 
-                                        eps, device=device)
+            model = ModelODIN(model, eps, mean[0], cov[0], device)
             stats = aggregate_stats([model], device, shape, 
                                     classes=model_params.classes)
             auroc, fp95 = get_auroc([model], model_params, stats, device)

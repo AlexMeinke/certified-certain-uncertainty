@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import datetime
-from importlib import reload
 
 import utils.models as models
 import utils.plotting as plotting
@@ -27,7 +26,7 @@ parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_c
 
 parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
 parser.add_argument('--lr', type=float, default=None, help='initial learning rate.')
-parser.add_argument('--lr_gmm', type=float, default=None, help='initial learning rate.')
+parser.add_argument('--lr_gmm', type=float, default=1e-5, help='initial learning rate.')
 parser.add_argument('--loglam', type=float, default=0., help='log of lambda.')
 parser.add_argument('--n', type=int, default=100, help='number of centroids.')
 parser.add_argument('--decay', type=float, default=5e-4, help='weight decay for base model.')
@@ -56,7 +55,6 @@ if hps.warmstart!='None':
     
 if hps.lr is None:
     hps.lr = model_params.lr
-    hps.lr_gmm = model_params.lr
 
 args = ''
 args = (args + '_PCA') if hps.PCA else args
@@ -65,7 +63,7 @@ loading_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_n' + str(hps.n)
                  +'_data_used' + str(model_params.data_used)
                  +'_augm_flag' + str(hps.augm_flag)
-                 +'_alg_' + 'scikit' + args
+                 + args
                  +'.pth') if hps.gmm_path is None else hps.gmm_path
 
 if hps.use_gmm:
@@ -138,11 +136,13 @@ for epoch in range(hps.epochs):
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)
+    writer.close()
 
     correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
     writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
     writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
     writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
+    writer.close()
     torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
 
 model = model.to('cpu')

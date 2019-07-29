@@ -21,6 +21,8 @@ parser.add_argument('--batches', type=int, default=10, help='number of batches t
 parser.add_argument('--batch_size', type=int, default=100, help='size of batches that one tests on.')
 parser.add_argument('--datasets', nargs='+', type=str, required=True, 
                     help='datasets to run attack on.')
+parser.add_argument('--drop_mmc', type=bool, default=False, help='when active, only displays AUC and Success rate')
+parser.add_argument('--vertical', type=bool, default=False, help='when active, aranges models vertically')
 
 
 hps = parser.parse_args()
@@ -98,19 +100,32 @@ for dataset in datasets:
     success_rate_vec.append(success_rate)
     mmc_vec.append([stats[i].mean() for i in range(len(model_list))])
     
-stats = 100*torch.stack([torch.tensor(mmc_vec), 
-                     torch.tensor(success_rate_vec),
-                     torch.tensor(auroc_vec)], 2).transpose(0,1)
+if hps.drop_mmc:
+    stats = 100 * torch.stack([
+                               torch.tensor(success_rate_vec),
+                               torch.tensor(auroc_vec)], 2).transpose(0,1)
+else:
+    stats = 100 * torch.stack([torch.tensor(mmc_vec), 
+                               torch.tensor(success_rate_vec),
+                               torch.tensor(auroc_vec)], 2).transpose(0,1)
 
 df_list = []
 
 for i in range(len(model_list)):
     df = pd.DataFrame(stats[i].numpy() )
     df.insert(0, 'A', pd.Series(datasets))
-    df.columns = ['DataSet', 'MMC', 'SR', 'AUC']
+    if hps.drop_mmc:
+        df.columns = ['DataSet', 'SR', 'AUC']
+    else:
+        df.columns = ['DataSet', 'MMC', 'SR', 'AUC']
+    
     df_list.append(df.set_index('DataSet'))
     
-df = pd.concat(df_list, axis=1, keys=list(model_path.file_dict.keys()))
+
+if hps.vertical:
+    df = pd.concat(df_list, axis=0, keys=list(model_path.file_dict.keys()))
+else:
+    df = pd.concat(df_list, axis=1, keys=list(model_path.file_dict.keys()))
 
 df.to_csv('results/' + saving_string + '.csv')
 

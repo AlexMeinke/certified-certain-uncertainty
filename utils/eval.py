@@ -98,7 +98,7 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
     seeds = []
 
     for _ in range(batches):
-        seed = torch.rand((batch_size,)+tuple(shape), device=device)
+        seed = torch.rand((batch_size,) + tuple(shape), device=device)
         batch_bounds = []
         batch_samples = []
 

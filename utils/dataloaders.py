@@ -226,7 +226,7 @@ def SVHN(train=True, batch_size=None, augm_flag=True):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.SVHN('../data', split=split, transform=transform, download=True)
+    dataset = datasets.SVHN('../data', split=split, transform=transform, download=False)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=4)
     return loader

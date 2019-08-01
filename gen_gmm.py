@@ -58,13 +58,17 @@ for n in hps.n:
     print(n)
     gmm = models.GMM(n, dim, metric=metric)
 
-    clf = mixture.GaussianMixture(n_components=n, 
-                                  covariance_type='spherical',
-                                  max_iter=500)
+    # clf = mixture.GaussianMixture(n_components=n, 
+    #                             covariance_type='spherical',
+    #                             max_iter=500, params='mc')
+    clf = mixture.GMM(n_components=n, covariance_type='spherical', params='mc')
+    
     clf.fit(X)
     mu = torch.tensor(clf.means_ ,dtype=torch.float)
-    logvar = torch.tensor(np.log(clf.covariances_) ,dtype=torch.float)
+    #logvar = torch.tensor(np.log(clf.covariances_) ,dtype=torch.float)
+    logvar = torch.tensor(np.log(clf.covars_[:,0]) ,dtype=torch.float)
     logvar = 0.*logvar + logvar.mean()
+    
     alpha = torch.tensor(np.log(clf.weights_) ,dtype=torch.float)
     gmm = models.GMM(n, dim, mu=mu, logvar=logvar, metric=metric)
 

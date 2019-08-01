@@ -412,6 +412,6 @@ class CalibratedHybrid(nn.Module):
     def forward(self, x):
         log_py, log_px = self.hybrid(x)
         
-        index = (log_px >= self.tau).float()[:,None]
+        index = 0.*(log_px >= self.tau).float()[:,None]
         
-        return log_py * index + (1 - index) * log_px[:,None]
+        return log_py * index + (1 - index) * log_px[:,None] / 1000.

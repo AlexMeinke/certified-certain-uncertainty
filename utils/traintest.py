@@ -93,6 +93,7 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
     model.train()
     
     train_loss = 0
+    likelihood_loss = 0
     correct = 0
     
     p_in = 1. / (1. + lam)
@@ -130,12 +131,14 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
                                                log_p_out*torch.ones_like(like_in)], 0), 0).mean()
         loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out, 
                                                log_p_out*torch.ones_like(like_out)], 0), 0).mean()
+        # loss5 = 16663. * model.mm.K * (2 * model.mm.logvar).exp().sum()
         
         loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4)
-
+        
         loss.backward()
         optimizer.step()
         
+        likelihood_loss += loss3.item()
         train_loss += loss.item()
         _, predicted = output.max(1)
         correct += predicted.eq(target).sum().item()
@@ -144,7 +147,9 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
+    return (train_loss / len(train_loader.dataset), 
+            correct / len(train_loader.dataset), 
+            likelihood_loss / len(train_loader.dataset))
 
 
 def train_ACET_gmm(model, device, train_loader, optimizer, epoch, 
@@ -193,8 +198,9 @@ def train_ACET_gmm(model, device, train_loader, optimizer, epoch,
                                                log_p_out*torch.ones_like(like_in)], 0), 0).mean()
         loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out, 
                                                log_p_out*torch.ones_like(like_out)], 0), 0).mean()
+        loss5 = - (2 * model.mm.logvar).exp().mean()
         
-        loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4)
+        loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4) 
 
         loss.backward()
         optimizer.step()

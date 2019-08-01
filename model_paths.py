@@ -141,11 +141,14 @@ class CIFAR10_models():
         file_hybrid = ('SavedModels/other/hybrid_CIFAR10.pth')
         
         
-        files = [file_base, file_CEDA, file_ACET, file_ODIN, file_Hendrycks, file_mahalanobis, file_GAN, file_hybrid, file_joint]
-        keys = ['Base', 'CEDA', 'ACET', 'ODIN', 'OE', 'Maha', 'GAN', 'Hybrid', 'CCU']
+        files = [file_base, file_CEDA, file_ODIN, 
+                 file_GAN, file_hybrid, file_mahalanobis, 
+                 file_Hendrycks, file_ACET, file_joint]
         
-        files = [file_Hendrycks, file_joint]
-        keys = ['OE', 'CCU']
+        keys = ['Base', 'CEDA', 'ODIN', 'GAN', 'Hybrid', 'Maha', 'OE', 'ACET', 'CCU']
+        
+        files = [file_hybrid, file_joint]
+        keys = ['Hybrid', 'CCU']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
 

@@ -85,7 +85,7 @@ for dataset in datasets:
     
     gmm = model_list[-1].mm
 
-    shape = enumerate(model_params.cali_loader).__next__()[1][0][0].shape
+    shape = next(iter(model_params.cali_loader))[0][0].shape
     
     stats, bounds, seeds, samples = ev.aggregate_adv_stats(model_list, gmm, device, 
                                            shape, classes=model_params.classes, 

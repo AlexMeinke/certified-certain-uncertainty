@@ -85,14 +85,15 @@ class WideResNet(nn.Module):
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
                 
-        self.mean = [x / 255 for x in [125.3, 123.0, 113.9]]
-        self.std = [x / 255 for x in [63.0, 62.1, 66.7]]
+        self.mean = nn.Parameter(torch.tensor( [x / 255 for x in [125.3, 123.0, 113.9]]), 
+                                 requires_grad=False)
+        self.std = nn.Parameter(torch.tensor( [x / 255 for x in [63.0, 62.1, 66.7]] ),
+                                requires_grad=False)
 
     def forward(self, x):
-        for i in range(3):
-            x[:,i,:,:] = (x[:,i,:,:] - self.mean[i]) / self.std[i]
+        out = (x - self.mean[None,:,None,None]) / self.std[None,:,None,None]
             
-        out = self.conv1(x)
+        out = self.conv1(out)
         out = self.block1(out)
         out = self.block2(out)
         out = self.block3(out)

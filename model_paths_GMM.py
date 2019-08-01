@@ -105,8 +105,28 @@ class CIFAR10_models():
                       'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
                      )
         
+        file_5 = ('SavedModels/'
+                      'gmm__PCACIFAR10_lam0.0_n5_lr0.1_lrgmm1e-05_'
+                      'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
+                     )
+        
         file_10 = ('SavedModels/'
                       'gmm__PCACIFAR10_lam0.0_n10_lr0.1_lrgmm1e-05_'
+                      'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
+                     )
+        
+        file_20 = ('SavedModels/'
+                      'gmm__PCACIFAR10_lam0.0_n20_lr0.1_lrgmm1e-05_'
+                      'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
+                     )
+        
+        file_30 = ('SavedModels/'
+                      'gmm__PCACIFAR10_lam0.0_n30_lr0.1_lrgmm1e-05_'
+                      'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
+                     )
+        
+        file_50 = ('SavedModels/'
+                      'gmm__PCACIFAR10_lam0.0_n50_lr0.1_lrgmm1e-05_'
                       'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
                      )
         
@@ -115,15 +135,21 @@ class CIFAR10_models():
                       'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
                      )
         
-        file_1000 = ('SavedModels/'
-                      'gmm__PCACIFAR10_lam0.0_n1000_lr0.1_lrgmm1e-05_'
+        file_200 = ('SavedModels/'
+                      'gmm__PCACIFAR10_lam0.0_n200_lr0.1_lrgmm1e-05_'
                       'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
                      )
+        
+        file_500 = ('Checkpoints/'
+                      'gmm__PCACIFAR10_lam0.0_n500_lr0.1_lrgmm1e-05_'
+                      'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
+                     )
+        
+        
+        files = [file_1, file_5, file_10, file_20, file_30, file_50, file_100, file_200, file_500]
+        keys = ['1','5','10','20','30','50','100','200','500']
 
         
-        
-        files = [file_1, file_10, file_100]
-        keys = ['1', '10', '100']
         self.file_dict = collections.OrderedDict(zip(keys, files))
 
 

@@ -95,7 +95,6 @@ if hps.train_type=='ACET':
 if torch.cuda.is_available():
     device = torch.device('cuda:' + str(hps.gpu))
 
-writer = SummaryWriter('runs/'+saving_string+str(datetime.datetime.now()))
 
 if hps.use_gmm:
     gmm.alpha = nn.Parameter(gmm.alpha)
@@ -124,25 +123,30 @@ else:
 
 lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.loglam)
 
+writer = SummaryWriter('runs/'+saving_string+str(datetime.datetime.now()))
+
 
 for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
  
-    trainloss, correct = tt.training_dict[hps.train_type](model, device, model_params.train_loader,  
+    trainloss, correct_train, likelihood_loss = tt.training_dict[hps.train_type](model, device,
+                                                                           model_params.train_loader,  
                                                           optimizer, epoch, lam=lam, verbose=hps.verbose,
                                                           epsilon=model_params.epsilon)
-    
-    writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
-    writer.add_scalar('InDistribution/TrainAccuracy', correct, epoch)
-    writer.close()
 
     correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
+    
+    writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
+    writer.add_scalar('InDistribution/TrainAccuracy', correct_train, epoch)
+    writer.add_scalar('InDistribution/likelihood_loss', likelihood_loss, epoch)
+    
     writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
     writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
     writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
     writer.close()
+    
     torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
 
 model = model.to('cpu')

@@ -33,9 +33,11 @@ keys = [key + ' ({:.2f}%)'.format(te) for (te, key) in zip(test_error, model_pat
 df = pd.concat(results, axis=1, keys=keys)
 
 time = str(datetime.datetime.now())
-df.to_csv('results/' + hps.dataset + time + '.csv')
-df.to_pickle('results/' + hps.dataset + time)
 
-file = open('results/' + hps.dataset + time + '.txt','w') 
+file = 'results/' + hps.dataset + '_' + time
+df.to_csv(file + '.csv')
+df.to_pickle(file)
+
+file = open(file + '.txt','w') 
 file.write(df.round(1).to_latex())
 file.close() 

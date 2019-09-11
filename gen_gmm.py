@@ -5,6 +5,8 @@ import utils.dataloaders as dl
 from sklearn import mixture
 import numpy as np
 import utils.gmm_helpers as gmm_helpers
+import model_params
+import torchvision.transforms as trn
 
 import argparse
 
@@ -18,28 +20,14 @@ parser.add_argument('--PCA', type=bool, default=False, help='initialize for usin
 parser.add_argument('--n', nargs='+', type=int, default=[100])
 
 hps = parser.parse_args()
-print(hps.n)
 
-if hps.dataset=='MNIST':
-    dim = 784
-    loader = dl.MNIST(train=True,augm_flag=hps.augm_flag)
-    hps.data_used = 60000 if hps.data_used is None else hps.data_used
-if hps.dataset=='FMNIST':
-    dim = 784
-    loader = dl.FMNIST(train=True,augm_flag=hps.augm_flag)
-    hps.data_used = 60000 if hps.data_used is None else hps.data_used
-elif hps.dataset=='SVHN':
-    dim = 3072
-    loader = dl.SVHN(train=True,augm_flag=hps.augm_flag)
-    hps.data_used = 50000 if hps.data_used is None else hps.data_used
-elif hps.dataset=='CIFAR10':
-    dim = 3072
-    loader = dl.CIFAR10(train=True,augm_flag=hps.augm_flag)
-    hps.data_used = 50000 if hps.data_used is None else hps.data_used
-elif hps.dataset=='CIFAR100':
-    dim = 3072
-    loader = dl.CIFAR100(train=True,augm_flag=hps.augm_flag)
-    hps.data_used = 50000 if hps.data_used is None else hps.data_used
+
+params = model_params.params_dict[hps.dataset](augm_flag=hps.augm_flag)
+
+dim = params.dim
+loader = params.train_loader
+hps.data_used = params.data_used if hps.data_used is None else hps.data_used
+
 
 X = []
 for x, f in loader:
@@ -58,14 +46,11 @@ for n in hps.n:
     print(n)
     gmm = models.GMM(n, dim, metric=metric)
 
-    # clf = mixture.GaussianMixture(n_components=n, 
-    #                             covariance_type='spherical',
-    #                             max_iter=500, params='mc')
     clf = mixture.GMM(n_components=n, covariance_type='spherical', params='mc')
     
     clf.fit(X)
     mu = torch.tensor(clf.means_ ,dtype=torch.float)
-    #logvar = torch.tensor(np.log(clf.covariances_) ,dtype=torch.float)
+    
     logvar = torch.tensor(np.log(clf.covars_[:,0]) ,dtype=torch.float)
     logvar = 0.*logvar + logvar.mean()
     
@@ -74,7 +59,8 @@ for n in hps.n:
 
 
     if hps.PCA:
-        gmm.mu.data = ( (gmm.mu.data * metric.singular_values_sqrt[None,:] ) @ metric.comp_vecs.t().inverse() )
+        gmm.mu.data = ( (gmm.mu.data * metric.singular_values_sqrt[None,:] ) 
+                       @ metric.comp_vecs.t().inverse() )
 
     saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
                      +'_n' + str(n)
@@ -87,7 +73,48 @@ for n in hps.n:
 
     torch.save(gmm, saving_string + '.pth')
 
-# gmm = gmm_helpers.rescale(gmm, 1., loader)
-# saving_string += '_rescaled'
-# torch.save(gmm, saving_string+'.pth')
+    
+    
+out_loader = dl.TinyImages(hps.dataset)
+
+    
+X = []
+for idx, (x, f) in enumerate(out_loader):
+    if idx>500:
+        break;
+    X.append(x.view(-1,dim))
+X = torch.cat(X, 0)
+  
+
+for n in hps.n:
+    # Out GMM
+    gmm = models.GMM(n, dim, metric=metric)
+
+    clf = mixture.GMM(n_components=n, covariance_type='spherical', params='mc')
+    
+    clf.fit(X)
+    mu = torch.tensor(clf.means_ ,dtype=torch.float)
+    
+    logvar = torch.tensor(np.log(clf.covars_[:,0]) ,dtype=torch.float)
+    logvar = 0.*logvar + logvar.mean()
+    
+    alpha = torch.tensor(np.log(clf.weights_) ,dtype=torch.float)
+    gmm = models.GMM(n, dim, mu=mu, logvar=logvar, metric=metric)
+
+
+    if hps.PCA:
+        gmm.mu.data = ( (gmm.mu.data * metric.singular_values_sqrt[None,:] ) 
+                       @ metric.comp_vecs.t().inverse() )
+
+    saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
+                     +'_n' + str(n)
+                     +'_data_used' + str(hps.data_used)
+                     +'_augm_flag' + str(hps.augm_flag))
+
+    if hps.PCA:
+        saving_string += '_PCA'
+
+
+    torch.save(gmm, saving_string + '_OUT' + '.pth')
+
 print('Done')

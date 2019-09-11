@@ -12,7 +12,41 @@ import numpy as np
 from sklearn.decomposition import PCA
 
 
-class LpMetric(nn.Module):
+class Metric(nn.Module):
+    def __init__(self):
+        super().__init__()
+        
+    def forward(self, x, y, dim=None):
+        pass
+    
+    def __add__(self, other):
+        return SumMetric(self, other)
+    
+    def __rmul__(self, scalar):
+        return ScaleMetric(scalar, self)
+    
+    
+class SumMetric(Metric):
+    def __init__(self, metric1, metric2):
+        super().__init__()
+        self.metric1 = metric1
+        self.metric2 = metric2
+        
+    def forward(self, x, y, dim=None):
+        return self.metric1(x, y, dim=dim) + self.metric2(x, y, dim=dim)
+    
+    
+class ScaleMetric(Metric):
+    def __init__(self, metric1, factor):
+        super().__init__()
+        self.metric1 = metric1
+        self.factor = factor
+        
+    def forward(self, x, y, dim=None):
+        return self.factor * self.metric1(x, y, dim=dim)
+
+
+class LpMetric(Metric):
     def __init__(self, p=2):
         super().__init__()
         self.p = p
@@ -20,9 +54,48 @@ class LpMetric(nn.Module):
         
     def forward(self, x, y, dim=None):
         return (x-y).norm(p=self.p, dim=dim)
+    
+
+class PerceptualMetric(Metric):
+    def __init__(self, model, p=2, latent_dim=122880, indices=None):
+        super().__init__()
+        self.model = model
+        self.p = p
+        self.norm_const = 0.
+        
+        self.latent_dim = latent_dim
+        reduced_latent_dim = int(0.01*latent_dim)
+        
+        if indices is None:
+            self.indices = sorted(np.random.choice(latent_dim, size=reduced_latent_dim, replace=False))
+        else:
+            self.indices = indices
+        
+    def forward(self, x, y, dim=None):
+        return (self.model(x)[:,self.indices][None,:,:]
+                -self.model(y)[:,self.indices][:,None,:]).norm(p=self.p, dim=dim)
 
     
-class PCAMetric(nn.Module):
+class PerceptualPCA(Metric):
+    def __init__(self, model, pca, indices=None):
+        super().__init__()
+        self.model = model
+        
+        self.pca = pca
+        
+        if indices is None:
+            self.indices = sorted(np.random.choice(latent_dim, size=reduced_latent_dim, replace=False))
+        else:
+            self.indices = indices
+        
+        
+    def forward(self, x, y, dim=None):
+        return self.pca(self.model(x)[:,self.indices][None,:,:],
+                        self.model(y)[:,self.indices][:,None,:], dim=dim)
+
+    
+    
+class PCAMetric(Metric):
     def __init__(self, X, p=2, min_sv_factor=100.):
         super().__init__()
         self.p = p
@@ -264,6 +337,38 @@ class RobustModel(nn.Module):
         b1 = torch.logsumexp(a1, 0).squeeze()
 
         a2 = torch.stack( (like , (self.loglam)*torch.ones_like(like) ), 0)
+        b2 = torch.logsumexp(a2, 0).squeeze()[:,None]
+
+        return b1-b2
+    
+    
+class DoublyRobustModel(nn.Module):
+    def __init__(self, base_model, mixture_model_in, mixture_model_out, loglam, dim=784, classes=10):
+        super().__init__()
+        self.base_model = base_model
+        
+        self.dim = dim
+        self.mm = mixture_model_in
+        self.mm_out = mixture_model_out
+
+        self.loglam = nn.Parameter(torch.tensor(loglam, dtype=torch.float))
+        self.log_K = -torch.tensor(classes, dtype=torch.float).log()
+        
+        
+    def forward(self, x):
+        batch_size = x.shape[0]
+        likelihood_per_peak_in = self.mm(x.view(batch_size, self.dim))
+        like_in = torch.logsumexp(likelihood_per_peak_in, dim=0)
+        
+        likelihood_per_peak_out = self.mm_out(x.view(batch_size, self.dim))
+        like_out = torch.logsumexp(likelihood_per_peak_out, dim=0)
+
+        x = self.base_model(x)
+        
+        a1 = torch.stack( (x + like_in[:,None], 0*x + (self.loglam + self.log_K) + like_out[:,None] ), 0)
+        b1 = torch.logsumexp(a1, 0).squeeze()
+
+        a2 = torch.stack( (like_in , (self.loglam) + like_out), 0)
         b2 = torch.logsumexp(a2, 0).squeeze()[:,None]
 
         return b1-b2

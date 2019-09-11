@@ -42,6 +42,8 @@ parser.add_argument('--verbose', type=int, default=-1, help='display training pr
 parser.add_argument('--train_type', type=str, default='plain', help='train on plain, CEDA or CEDA_GMM')
 parser.add_argument('--warmstart', type=str, default='None', help='warmstart base model on pretrained model')
 parser.add_argument('--PCA', type=bool, default=False, help='use PCA in GMM metric')
+parser.add_argument('--fit_out', type=bool, default=False, 
+                    help='whether or not to fit out-distribution as well')
 parser.add_argument('--steps', type=int, default=40, help='steps in PGD attack')
 
 hps = parser.parse_args()
@@ -55,6 +57,10 @@ if hps.warmstart!='None':
     
 if hps.lr is None:
     hps.lr = model_params.lr
+    
+if hps.fit_out:
+    hps.train_type = 'CEDA_GMM_OUT'
+
 
 args = ''
 args = (args + '_PCA') if hps.PCA else args
@@ -65,6 +71,14 @@ loading_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_augm_flag' + str(hps.augm_flag)
                  + args
                  +'.pth') if hps.gmm_path is None else hps.gmm_path
+
+loading_string_out = ('SavedModels/GMM/gmm_' + hps.dataset
+                 +'_n' + str(hps.n)
+                 +'_data_used' + str(model_params.data_used)
+                 +'_augm_flag' + str(hps.augm_flag)
+                 + args + '_OUT'
+                 +'.pth')
+
 
 if hps.use_gmm:
     gmm = torch.load(loading_string)
@@ -77,20 +91,24 @@ if hps.use_gmm:
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type)
                      +'grad_vars')
+    
     for name in hps.grad_vars:
         saving_string += ' ' + name
     if hps.gmm_path is not None:
         saving_string += '_customGMM'
+    if hps.fit_out is not None:
+        saving_string += '_OUT'
 else:
     saving_string = ('base_' + hps.dataset
                      +'_lr' + str(hps.lr)
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type))
 
+
 if hps.warmstart!='None':
     saving_string += '_warmstart'
 if hps.train_type=='ACET':
-    saving_string += '_steps'+str(hps.steps)
+    saving_string += '_steps' + str(hps.steps)
 
 if torch.cuda.is_available():
     device = torch.device('cuda:' + str(hps.gpu))
@@ -101,8 +119,20 @@ if hps.use_gmm:
     gmm.mu.requires_grad = ('mu' in hps.grad_vars)
     gmm.logvar.requires_grad = ('var' in hps.grad_vars)
     gmm.alpha.requires_grad = ('alpha' in hps.grad_vars)
-    model = models.RobustModel(base_model, gmm, hps.loglam, 
-                               dim=model_params.dim, classes=model_params.classes).to(device)
+    
+    if hps.fit_out:
+        gmm_out = torch.load(loading_string_out)
+        gmm_out.alpha = nn.Parameter(gmm.alpha)
+        gmm_out.mu.requires_grad = ('mu' in hps.grad_vars)
+        gmm_out.logvar.requires_grad = ('var' in hps.grad_vars)
+        gmm_out.alpha.requires_grad = ('alpha' in hps.grad_vars)
+        model = models.DoublyRobustModel(base_model, gmm, gmm_out,  
+                                         hps.loglam, dim=model_params.dim, 
+                                         classes=model_params.classes).to(device)
+    else:
+        model = models.RobustModel(base_model, gmm, hps.loglam, 
+                                   dim=model_params.dim, 
+                                   classes=model_params.classes).to(device)
     model.loglam.requires_grad = False
 else:
     model = base_model.to(device)
@@ -113,17 +143,28 @@ lr_gmm = hps.lr_gmm
 if hps.use_gmm:
     param_groups = [{'params':model.mm.parameters(),'lr':lr_gmm, 'weight_decay':0.},
                     {'params':model.base_model.parameters(),'lr':lr, 'weight_decay':hps.decay}]
+    if hps.fit_out:
+        param_groups = [{'params':model.mm.parameters(),'lr':lr_gmm, 'weight_decay':0.},
+                        {'params':model.mm_out.parameters(),'lr':lr_gmm, 'weight_decay':0.},
+                        {'params':model.base_model.parameters(),'lr':lr, 'weight_decay':hps.decay}]
 else:
     param_groups = [{'params':model.parameters(),'lr':lr, 'weight_decay':hps.decay}]
+    
     
 if hps.dataset=='MNIST':
     optimizer = optim.Adam(param_groups)
 else: 
     optimizer = optim.SGD(param_groups, momentum=0.9)
 
+
 lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.loglam)
 
-writer = SummaryWriter('runs/'+saving_string+str(datetime.datetime.now()))
+writer = SummaryWriter('logs/'+saving_string+str(datetime.datetime.now()))
+
+if hps.fit_out:
+    noise_loader = dl.TinyImages(hps.dataset)
+else:
+    noise_loader = None
 
 
 for epoch in range(hps.epochs):
@@ -131,10 +172,11 @@ for epoch in range(hps.epochs):
         for group in optimizer.param_groups:
             group['lr'] *= .1
  
-    trainloss, correct_train, likelihood_loss = tt.training_dict[hps.train_type](model, device,
-                                                                           model_params.train_loader,  
-                                                          optimizer, epoch, lam=lam, verbose=hps.verbose,
-                                                          epsilon=model_params.epsilon)
+    losses = tt.training_dict[hps.train_type](model, device, model_params.train_loader,  
+                                              optimizer, epoch, lam=lam, verbose=hps.verbose,
+                                              epsilon=model_params.epsilon, noise_loader=noise_loader)
+    
+    trainloss, correct_train, likelihood_loss = losses
 
     correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
     
@@ -147,10 +189,10 @@ for epoch in range(hps.epochs):
     writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
     writer.close()
     
-    torch.save(model, 'Checkpoints/' + saving_string+ '.pth')
+    torch.save(model, 'Checkpoints/' + saving_string + '.pth')
 
 model = model.to('cpu')
 if hps.use_gmm:
-    torch.save(model, 'SavedModels/' + saving_string+ '.pth')
+    torch.save(model, 'SavedModels/' + saving_string + '.pth')
 else:
-    torch.save(model, 'SavedModels/base/' + saving_string+ '.pth')
+    torch.save(model, 'SavedModels/base/' + saving_string + '.pth')

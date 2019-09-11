@@ -43,3 +43,26 @@ def get_b(r, x, gmm, b=1.):
     
     bound = torch.logsumexp(gmm.alpha - norm_const - exponent, 0).detach().cpu().item() - np.log(b)
     return bound
+
+
+def get_b_out(r, x, gmm, gmm_out, b=1.):
+    x = x.view(-1)
+    d = gmm.metric(gmm.mu[None,:,:], x.view(-1)[None, None,:]).squeeze()
+    d_out = gmm.metric(gmm_out.mu[None,:,:], x.view(-1)[None, None,:]).squeeze()
+
+    var = gmm.logvar.exp()
+    var_out = gmm_out.logvar.exp()
+    
+    norm_const = .5 * gmm.D * gmm.logvar + gmm.norm_const
+    norm_const_out = .5 * gmm_out.D * gmm_out.logvar + gmm_out.norm_const
+
+    exponent = torch.stack([(d - r), torch.zeros_like(var)], 0).max(0)[0]
+    exponent_out = d_out + r
+    
+    exponent = exponent**2 / (2*var)
+    exponent_out = exponent_out**2 / (2*var_out)
+    
+    bound = (torch.logsumexp(gmm.alpha - norm_const - exponent, 0).detach().cpu().item()
+             - torch.logsumexp(gmm_out.alpha - norm_const_out - exponent_out, 0).detach().cpu().item()
+             - np.log(b))
+    return bound

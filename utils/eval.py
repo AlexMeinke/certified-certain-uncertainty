@@ -10,21 +10,35 @@ import utils.dataloaders as dl
 import utils.models as models
 import utils.gmm_helpers as gmm_helpers
 
+log = lambda x: np.log(x)
+
 
 def test_metrics(model, device, in_loader, out_loader):
     with torch.no_grad():
         model.eval()
         conf_in = []
         conf_out = []
+        
 
         for data_in, _ in in_loader:
             data_in = data_in.to(device)
-            output_in = model(data_in).max(1)[0].exp()
+            out = model(data_in)
+            output_in = out.max(1)[0]
+            
+         #   min_conf = 1./out.shape[1]
+            
+         #   idx = output_in < min_conf
+         #   output_in[idx] = min_conf
             conf_in.append(output_in)
             
         for data_out, _ in out_loader:    
             data_out = data_out.to(device)
-            output_out = model(data_out).max(1)[0].exp()
+            out = model(data_out)
+            output_out = out.max(1)[0]
+            
+          #  min_conf = 1./out.shape[1]
+          #  idx = output_out < min_conf
+          #  output_out[idx] = min_conf
             conf_out.append(output_out)
             
         conf_in = torch.cat(conf_in)
@@ -35,9 +49,9 @@ def test_metrics(model, device, in_loader, out_loader):
         y_scores = torch.cat([conf_in, 
                               conf_out]).cpu().numpy()
         
-        mmc = conf_out.mean().item()
+        mmc = conf_out.exp().mean().item()
         auroc = roc_auc_score(y_true, y_scores)
-        fp95 = ((conf_out > 0.95).float().mean().item())
+        fp95 = ((conf_out.exp() > 0.95).float().mean().item())
         return mmc, auroc, fp95
 
     
@@ -113,7 +127,10 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
             adv_noise, _ = adv.gen_pca_noise(model, device, seed, pca, 
                                              epsilon=batch_bounds, perturb=True, 
                                              restarts=restarts, steps=steps, alpha=alpha)
-            batch_stats.append(model(adv_noise).max(1)[0].exp().detach().cpu().clone())
+            out = model(adv_noise).max(1)[0].detach().cpu().clone()
+            #idx = out<(1./classes)
+            #out[idx] = (1./classes)
+            batch_stats.append(out)
             batch_samples.append(adv_noise.detach().cpu())
             
         seeds.append(seed.cpu())
@@ -129,6 +146,58 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
     bounds = torch.cat(bounds, 0)
     
     return stats, bounds, seeds, samples
+
+
+def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10, 
+                            batches=10, batch_size=100, steps=200, 
+                            restarts=10, alpha=1., lam=1.):
+    
+    pca = models.MyPCA(gmm.metric.comp_vecs.t(), gmm.metric.singular_values, shape)
+    
+    f = 1.1
+    b = lam * (f-1.) / (classes-f)
+
+    bounds = []
+    stats = []
+    samples = []
+    seeds = []
+
+    for _ in range(batches):
+        seed = torch.rand((batch_size,) + tuple(shape), device=device)
+        batch_bounds = []
+        batch_samples = []
+
+        for x in seed:
+            batch_bounds.append( scipy.optimize.brentq(gmm_helpers.get_b_out, 0, 
+                                                       10000., args = (x, gmm, gmm_out, b)) )
+        batch_bounds = torch.tensor(batch_bounds, device=device)
+        bounds.append(batch_bounds.clone().cpu())
+
+        batch_stats = []
+        for i, model in enumerate(model_list):
+            model.eval()
+            adv_noise, _ = adv.gen_pca_noise(model, device, seed, pca, 
+                                             epsilon=batch_bounds, perturb=True, 
+                                             restarts=restarts, steps=steps, alpha=alpha)
+            out = model(adv_noise).max(1)[0].detach().cpu().clone()
+            
+            batch_stats.append(out)
+            batch_samples.append(adv_noise.detach().cpu())
+            
+        seeds.append(seed.cpu())
+        
+        batch_samples = torch.stack(batch_samples, 0)
+        batch_stats = torch.stack(batch_stats, 0)
+        stats.append(batch_stats.clone())
+        samples.append(batch_samples.clone())
+
+    seeds = torch.stack(seeds, 0)
+    samples = torch.stack(samples, 0)
+    stats = torch.cat(stats, -1)
+    bounds = torch.cat(bounds, 0)
+    
+    return stats, bounds, seeds, samples
+
 
 class StatsContainer(torch.nn.Module):
     def __init__(self, stats, bounds, seeds, samples):

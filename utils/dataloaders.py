@@ -6,10 +6,13 @@ import numpy as np
 import scipy.ndimage.filters as filters
 import utils.preproc as pre
 
+from bisect import bisect_left
+
 
 train_batch_size = 128
 test_batch_size = 100
 
+path = '../data'
 
 def MNIST(train=True, batch_size=None, augm_flag=True):
     if batch_size==None:
@@ -27,7 +30,7 @@ def MNIST(train=True, batch_size=None, augm_flag=True):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.MNIST('../data', train=train, transform=transform)
+    dataset = datasets.MNIST(path, train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=4)
     return loader
@@ -49,7 +52,7 @@ def EMNIST(train=False, batch_size=None, augm_flag=False):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.EMNIST('../data', split='letters', 
+    dataset = datasets.EMNIST(path, split='letters', 
                               train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=1)
@@ -72,7 +75,7 @@ def FMNIST(train=False, batch_size=None, augm_flag=False):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.FashionMNIST('../data', train=train, transform=transform)
+    dataset = datasets.FashionMNIST(path, train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=1)
     return loader
@@ -100,7 +103,7 @@ def GrayCIFAR10(train=False, batch_size=None, augm_flag=False):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.CIFAR10('../data', train=train, transform=transform)
+    dataset = datasets.CIFAR10(path, train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=1)
     return loader
@@ -119,15 +122,15 @@ def Noise(dataset, train=True, batch_size=None):
                     pre.ContrastRescaling()
                     ])
     if dataset=='MNIST':
-        dataset = datasets.MNIST('../data', train=train, transform=transform)
+        dataset = datasets.MNIST(path, train=train, transform=transform)
     elif dataset=='FMNIST':
-        dataset = datasets.FashionMNIST('../data', train=train, transform=transform)
+        dataset = datasets.FashionMNIST(path, train=train, transform=transform)
     elif dataset=='SVHN':
-        dataset = datasets.SVHN('../data', split='train' if train else 'test', transform=transform)
+        dataset = datasets.SVHN(path, split='train' if train else 'test', transform=transform)
     elif dataset=='CIFAR10':
-        dataset = datasets.CIFAR10('../data', train=train, transform=transform)
+        dataset = datasets.CIFAR10(path, train=train, transform=transform)
     elif dataset=='CIFAR100':
-        dataset = datasets.CIFAR100('../data', train=train, transform=transform)
+        dataset = datasets.CIFAR100(path, train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=False, num_workers=4)
     loader = PrecomputeLoader(loader, batch_size=batch_size, shuffle=True)
@@ -147,7 +150,7 @@ def UniformNoise(dataset, train=False, batch_size=None):
     elif dataset in ['SVHN', 'CIFAR10', 'CIFAR100']:
         shape = (3, 32, 32)
         
-    data = torch.rand((10*batch_size,) + shape)
+    data = torch.rand((100*batch_size,) + shape)
     train = data_utils.TensorDataset(data, torch.zeros_like(data))
     loader = torch.utils.data.DataLoader(train, batch_size=batch_size, 
                                          shuffle=False, num_workers=1)
@@ -173,7 +176,7 @@ def CIFAR10(train=True, batch_size=None, augm_flag=True):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.CIFAR10('../data', train=train, transform=transform)
+    dataset = datasets.CIFAR10(path, train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=4)
     return loader
@@ -198,7 +201,7 @@ def CIFAR100(train=False, batch_size=None, augm_flag=False):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.CIFAR100('../data', train=train, transform=transform)
+    dataset = datasets.CIFAR100(path, train=train, transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=1)
     return loader
@@ -226,7 +229,7 @@ def SVHN(train=True, batch_size=None, augm_flag=True):
     
     transform = transform_train if (augm_flag and train) else transform_test
     
-    dataset = datasets.SVHN('../data', split=split, transform=transform, download=False)
+    dataset = datasets.SVHN(path, split=split, transform=transform, download=False)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=train, num_workers=4)
     return loader
@@ -243,7 +246,7 @@ def LSUN_CR(train=False, batch_size=None, augm_flag=False):
     transform = transforms.Compose([
             transforms.Resize(size=(32, 32))
         ] + transform_base)
-    data_dir = '../data/LSUN'
+    data_dir = path + '/LSUN'
     dataset = datasets.LSUN(data_dir, classes=['classroom_val'], transform=transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
                                          shuffle=False, num_workers=4)
@@ -255,7 +258,7 @@ def ImageNetMinusCifar10(train=False, batch_size=None, augm_flag=False):
         print('Warning: Training set for ImageNet not available')
     if batch_size is None:
         batch_size=test_batch_size
-    dir_imagenet = '../data/imagenet/val/'
+    dir_imagenet = path + '/imagenet/val/'
     n_test_imagenet = 30000
 
     transform = transforms.ToTensor()
@@ -280,6 +283,83 @@ def PrecomputeLoader(loader, batch_size=100, shuffle=True):
     return data_utils.DataLoader(train, batch_size=batch_size, shuffle=shuffle)
 
 
+def TinyImages(dataset, batch_size=None):
+    if batch_size is None:
+        batch_size = train_batch_size
+    
+    dataset_out = TinyImagesDataset(dataset)
+    loader = torch.utils.data.DataLoader(dataset_out, batch_size=batch_size, 
+                                         shuffle=False, num_workers=4)
+    return loader
+
+
+class TinyImagesDataset(torch.utils.data.Dataset):
+
+    def __init__(self, dataset):
+        if dataset in ['CIFAR10', 'CIFAR100']:
+            exclude_cifar = True
+        else:
+            exclude_cifar = False
+
+        data_file = open('/home/alexm/scratch/80M_tiny_images/tiny_images.bin', "rb")
+
+        def load_image(idx):
+            data_file.seek(idx * 3072)
+            data = data_file.read(3072)
+            return np.fromstring(data, dtype='uint8').reshape(32, 32, 3, order="F")
+
+        self.load_image = load_image
+        self.offset = 0     # offset index
+        
+        
+        transform_base = [transforms.ToTensor()]
+        if dataset in ['MNIST', 'FMNIST']:
+            transform = transforms.Compose([
+                transforms.ToPILImage(), 
+                transforms.Resize(size=(28,28)),
+                transforms.Lambda(lambda x: x.convert('L', (0.2989, 0.5870, 0.1140, 0))),
+                ] + transform_base)
+        else:
+            transform = transforms.Compose([
+                transforms.ToPILImage(), 
+                ] + transform_base)
+
+        self.transform = transform
+        self.exclude_cifar = exclude_cifar
+
+        if exclude_cifar:
+            self.cifar_idxs = []
+            with open('./utils/80mn_cifar_idxs.txt', 'r') as idxs:
+                for idx in idxs:
+                    # indices in file take the 80mn database to start at 1, hence "- 1"
+                    self.cifar_idxs.append(int(idx) - 1)
+
+            # hash table option
+            self.cifar_idxs = set(self.cifar_idxs)
+            self.in_cifar = lambda x: x in self.cifar_idxs
+
+    def __getitem__(self, index):
+        index = (index + self.offset) % 79302016
+
+        if self.exclude_cifar:
+            while self.in_cifar(index):
+                index = np.random.randint(79302017)
+
+        img = self.load_image(index)
+        if self.transform is not None:
+            img = self.transform(img)
+            #img = transforms.ToTensor()(img)
+
+        return img, 0  # 0 is the class
+
+    def __len__(self):
+        return 79302017
+    
+    def getLoader(self):
+        out_loader = torch.utils.data.DataLoader(
+                                self, batch_size=128, shuffle=False,
+                                num_workers=4, pin_memory=True)
+
 datasets_dict = {'MNIST':          MNIST,
                  'FMNIST':         FMNIST,
                  'cifar10_gray':   GrayCIFAR10,
@@ -290,4 +370,5 @@ datasets_dict = {'MNIST':          MNIST,
                  'lsun_classroom': LSUN_CR,
                  'imagenet_minus_cifar10':  ImageNetMinusCifar10,
                  'noise': Noise,
+                 'tiny': TinyImages,
                  }

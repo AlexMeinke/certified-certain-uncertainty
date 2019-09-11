@@ -371,14 +371,15 @@ class Glow(nn.Module):
 
     
 class Hybrid(nn.Module):
-    def __init__(self, flow, classes=10):
+    def __init__(self, flow, classes=10, dim=3072):
         super().__init__()
         
         self.flow = flow
-        self.n_pixel = 32 * 32 * 3
+        self.n_pixel = dim
         self.n_bins = 2**5
         
         self.beta = nn.Linear(self.n_pixel, classes)
+        self.dropout = nn.Dropout(p=.5)
 
     def forward(self, x):
         log_p, logdet, z = self.flow( x )
@@ -386,7 +387,7 @@ class Hybrid(nn.Module):
         log_px = self.calc_log_p(logdet, log_p)
         
         z = torch.cat([zz.view(x.shape[0], -1) for zz in z], 1)
-        log_py = F.log_softmax(self.beta(z), dim=1)
+        log_py = F.log_softmax(self.beta(self.dropout(z)), dim=1)
         
         return log_py, log_px
     
@@ -396,6 +397,7 @@ class Hybrid(nn.Module):
         loss = loss + logdet + log_p
 
         return loss
+
 
     
 class CalibratedHybrid(nn.Module):

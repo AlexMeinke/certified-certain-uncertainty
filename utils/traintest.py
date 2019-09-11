@@ -152,6 +152,74 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
             likelihood_loss / len(train_loader.dataset))
 
 
+def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch, 
+                   lam=1., verbose=100, noise_loader=None, epsilon=.3):
+    criterion = nn.NLLLoss()
+    model.train()
+    
+    train_loss = 0
+    likelihood_loss = 0
+    correct = 0
+    
+    p_in = 1. / (1. + lam)
+    p_out = lam * p_in
+    
+    log_p_in = torch.tensor(p_in, device=device).log()
+    log_p_out = torch.tensor(p_out, device=device).log()
+    
+    
+    enum2 = iter(noise_loader)
+    
+    enum = enumerate(train_loader)
+    for batch_idx, (data, target) in enum:
+        data, target = data.to(device), target.to(device)
+        
+        
+        noise = next(enum2)[0].to(device)
+
+        optimizer.zero_grad()
+        
+        full_data = torch.cat([data, noise], 0)
+        full_out = model(full_data)
+        
+        output = full_out[:data.shape[0]]
+        output_adv = full_out[data.shape[0]+1:]
+        
+        
+        like_in_in = torch.logsumexp( model.mm(data.view(data.shape[0], -1)), 0 )
+        like_out_in =  torch.logsumexp( model.mm(noise.view(noise.shape[0], -1)), 0 )
+        
+        like_in_out = torch.logsumexp( model.mm_out(data.view(data.shape[0], -1)), 0 )
+        like_out_out =  torch.logsumexp( model.mm_out(noise.view(noise.shape[0], -1)), 0 )
+        
+        
+        loss1 = criterion(output, target)
+        loss2 = - output_adv.mean()
+        loss3 = - torch.logsumexp(torch.stack([log_p_in + like_in_in, 
+                                               log_p_out + like_in_out], 0), 0).mean()
+        loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out_in, 
+                                               log_p_out + like_out_out], 0), 0).mean()
+        
+        
+        loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4)
+        
+        loss.backward()
+        optimizer.step()
+        
+        likelihood_loss += loss3.item()
+        train_loss += loss.item()
+        _, predicted = output.max(1)
+        correct += predicted.eq(target).sum().item()
+
+        if (batch_idx % verbose == 0) and verbose>0:
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
+    return (train_loss / len(train_loader.dataset), 
+            correct / len(train_loader.dataset), 
+            likelihood_loss / len(train_loader.dataset))
+
+
 def train_ACET_gmm(model, device, train_loader, optimizer, epoch, 
                    lam=1., verbose=100, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
@@ -293,5 +361,6 @@ training_dict = {'plain': train_plain,
                   'CEDA': train_CEDA,
                   'CEDA_GMM' : train_CEDA_gmm,
                   'ACET_GMM' : train_ACET_gmm,
-                  'ACET' : train_ACET
+                  'ACET' : train_ACET,
+                  'CEDA_GMM_OUT' : train_CEDA_gmm_out,
                 }

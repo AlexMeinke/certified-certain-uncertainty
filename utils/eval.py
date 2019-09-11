@@ -149,7 +149,7 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
 
 
 def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10, 
-                            batches=10, batch_size=100, steps=200, 
+                            batches=10, batch_size=100, steps=200, use_out_loader=False,
                             restarts=10, alpha=1., lam=1.):
     
     pca = models.MyPCA(gmm.metric.comp_vecs.t(), gmm.metric.singular_values, shape)
@@ -161,9 +161,19 @@ def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10,
     stats = []
     samples = []
     seeds = []
+    
+    if use_out_loader:
+        if shape[0]==1:
+            dataset = 'MNIST'
+        else:
+            dataset = 'CIFAR10'
+        out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size))
 
     for _ in range(batches):
-        seed = torch.rand((batch_size,) + tuple(shape), device=device)
+        if use_out_loader:
+            seed = next(out_loader).to(device)
+        else:
+            seed = torch.rand((batch_size,) + tuple(shape), device=device)
         batch_bounds = []
         batch_samples = []
 

@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import numpy as np
 from sklearn.metrics import roc_auc_score
+import utils.dataloaders as dl
 
 
 class LeNetTemp(nn.Module):
@@ -70,8 +71,8 @@ class ModelODIN(nn.Module):
         return x
 
 
-def grid_search_variables(base_model, model_params, device):
-    shape = enumerate(model_params.cali_loader).__next__()[1][0][0].shape
+def grid_search_variables(base_model, model_params, device, out_seeds=False):
+    shape = next(iter(model_params.cali_loader))[0][0].shape
     temperatures = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
     #temperatures = [200, 500, 1000]
 
@@ -81,10 +82,12 @@ def grid_search_variables(base_model, model_params, device):
 
     for T in temperatures:
         vec = []
+        temp_model = model_dict[model_params.data_name](base_model, T)
         for eps in epsilons:
-            model = ModelODIN(model, eps, mean[0], cov[0], device)
+            model = ModelODIN(temp_model, eps, device)
             stats = aggregate_stats([model], device, shape, 
-                                    classes=model_params.classes)
+                                    classes=model_params.classes,
+                                    out_seeds=out_seeds)
             auroc, fp95 = get_auroc([model], model_params, stats, device)
             vec.append(auroc + fp95)
         grid.append(vec)
@@ -132,12 +135,24 @@ def get_auroc(model_list, model_params, stats, device):
 
 
 def aggregate_stats(model_list, device, shape, classes=10, 
-                    batches=20, batch_size=100):
+                    batches=20, batch_size=100, out_seeds=False):
     stats = []
+    
+    if out_seeds:
+        if shape[0]==1:
+            dataset = 'MNIST'
+        else:
+            dataset = 'CIFAR10'
+        out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size))
 
     for _ in range(batches):
         seed = torch.rand((batch_size,)+tuple(shape), device=device)
-        
+
+        if out_seeds:
+            seed = next(out_loader)[0].to(device)
+        else:
+            seed = torch.rand((batch_size,) + tuple(shape), device=device)
+            
         batch_stats = []
         for i, model in enumerate(model_list):
             model.eval()

@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(description='Parse arguments.', prefix_chars='-
 
 parser.add_argument('--dataset', type=str, required=True, help='Which dataset to use.')
 parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
+parser.add_argument('--drop_mmc', type=bool, default=False, help='whether to use the more compact format.')
 
 hps = parser.parse_args()
 
@@ -24,12 +25,17 @@ model_list = [torch.load(file).to(device) for file in model_path.file_dict.value
 
 accuracies = [tt.test(model, device, model_params.test_loader, min_conf=.001)[0]
               for model in model_list]
-results = [ev.evaluate(model, device, model_params.data_name, model_params.loaders) 
+
+results = [ev.evaluate(model, device, model_params.data_name, 
+                       model_params.loaders, drop_mmc=hps.drop_mmc) 
            for model in model_list]
+
 test_error = [100*(1.-acc) for acc in accuracies]
 
-
-keys = [key + ' ({:.2f}%)'.format(te) for (te, key) in zip(test_error, model_path.file_dict.keys())]
+if hps.drop_mmc:
+    keys = [key for (te, key) in zip(test_error, model_path.file_dict.keys())]
+else:
+    keys = [key + ' ({:.2f}%)'.format(te) for (te, key) in zip(test_error, model_path.file_dict.keys())]
 df = pd.concat(results, axis=1, keys=keys)
 
 time = str(datetime.datetime.now())

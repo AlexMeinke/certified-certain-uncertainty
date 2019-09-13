@@ -162,7 +162,7 @@ lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.loglam)
 writer = SummaryWriter('logs/'+saving_string+str(datetime.datetime.now()))
 
 if hps.fit_out:
-    noise_loader = dl.TinyImages(hps.dataset)
+    noise_loader = dl.TinyImages(hps.dataset, shuffle=True)
 else:
     noise_loader = None
 

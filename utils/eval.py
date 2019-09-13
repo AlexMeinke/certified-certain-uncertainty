@@ -55,15 +55,24 @@ def test_metrics(model, device, in_loader, out_loader):
         return mmc, auroc, fp95
 
     
-def evaluate_model(model, device, base_loader, loaders):
+def evaluate_model(model, device, base_loader, loaders, drop_mmc=False):
     metrics = []
-    mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
-    metrics.append(['orig', 100*mmc, 0.])
-    for (name, data_loader) in loaders:
-        mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
-        metrics.append([name, 100*mmc, 100*auroc])
+    if drop_mmc:
+        # mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
+        # metrics.append(['orig', 0.])
+        for (name, data_loader) in loaders:
+            mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
+            metrics.append([name, 100*auroc])
 
-    df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUC'])
+        df = pd.DataFrame(metrics, columns = ['DataSet', 'AUC'])
+    else:
+        mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
+        metrics.append(['orig', 100*mmc, 0.])
+        for (name, data_loader) in loaders:
+            mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
+            metrics.append([name, 100*mmc, 100*auroc])
+
+        df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUC'])
     return df.set_index('DataSet')
 
 
@@ -74,7 +83,8 @@ def write_log(df, writer, epoch=0):
             writer.add_scalar('MMC/'+i, df.loc[i]['MMC'], epoch)
     
     
-def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=None, epoch=0):
+def evaluate(model, device, dataset, loaders, load_adversaries=False, 
+             writer=None, epoch=0, drop_mmc=False):
 
     if load_adversaries:
         NoiseLoader = loaders[-1][1]
@@ -90,7 +100,8 @@ def evaluate(model, device, dataset, loaders, load_adversaries=False, writer=Non
             )
     else:
         temp = loaders
-    df = evaluate_model(model, device, dl.datasets_dict[dataset](train=False), temp)
+    df = evaluate_model(model, device, dl.datasets_dict[dataset](train=False), 
+                        temp, drop_mmc=drop_mmc)
                 
     if writer is not None:
         write_log(df, writer, epoch)
@@ -149,7 +160,7 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
 
 
 def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10, 
-                            batches=10, batch_size=100, steps=200, use_out_loader=False,
+                            batches=10, batch_size=100, steps=200, out_seeds=False,
                             restarts=10, alpha=1., lam=1.):
     
     pca = models.MyPCA(gmm.metric.comp_vecs.t(), gmm.metric.singular_values, shape)
@@ -162,7 +173,7 @@ def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10,
     samples = []
     seeds = []
     
-    if use_out_loader:
+    if out_seeds:
         if shape[0]==1:
             dataset = 'MNIST'
         else:
@@ -170,16 +181,21 @@ def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10,
         out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size))
 
     for _ in range(batches):
-        if use_out_loader:
-            seed = next(out_loader).to(device)
+        if out_seeds:
+            seed = next(out_loader)[0].to(device)
         else:
             seed = torch.rand((batch_size,) + tuple(shape), device=device)
         batch_bounds = []
         batch_samples = []
 
         for x in seed:
-            batch_bounds.append( scipy.optimize.brentq(gmm_helpers.get_b_out, 0, 
-                                                       10000., args = (x, gmm, gmm_out, b)) )
+            a = gmm_helpers.get_b_out(0., x, gmm, gmm_out, b)
+            if a>=0:
+                batch_bounds.append(0.)
+            else:
+                batch_bounds.append( scipy.optimize.brentq(gmm_helpers.get_b_out, 0, 
+                                                       10000., args = (x, gmm, gmm_out, b),
+                                                          maxiter=10000) )
         batch_bounds = torch.tensor(batch_bounds, device=device)
         bounds.append(batch_bounds.clone().cpu())
 

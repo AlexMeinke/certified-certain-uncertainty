@@ -31,6 +31,8 @@ parser.add_argument('--wide_format', type=bool, default=False,
                     help='when active, aranges MMC, AUC, SR, TE in separate rows.')
 parser.add_argument('--fit_out', type=bool, default=False, 
                     help='use GMM for the out-distribution as well.')
+parser.add_argument('--out_seeds', type=bool, default=False, 
+                    help='use 80m tiny images as seeds for attack.')
 
 hps = parser.parse_args()
 
@@ -52,8 +54,12 @@ saving_string = ('samples_steps' + str(steps)
                  + '_batches' + str(batches)
                  + '_batch_size' + str(batch_size)
                 )
+
 for dataset in datasets:
     saving_string += '_' + dataset
+    
+if hps.out_seeds:
+    saving_string += '_OUTSEEDS'
     
 saving_string += '_' + str(datetime.datetime.now())
 
@@ -109,11 +115,12 @@ for dataset in datasets:
         gmm_out = model_list[-1].mm_out
         
 
-        stats, bounds, seeds, samples = ev.aggregate_adv_stats_out(model_list, gmm, gmm_out, device, 
-                                               shape, classes=model_params.classes, 
-                                               batches=batches, batch_size=batch_size, 
-                                               steps=steps, 
-                                               restarts=restarts, alpha=alpha)
+        results = ev.aggregate_adv_stats_out(model_list, gmm, gmm_out, device, 
+                                             shape, classes=model_params.classes, 
+                                             batches=batches, batch_size=batch_size, 
+                                             steps=steps, out_seeds=hps.out_seeds,
+                                             restarts=restarts, alpha=alpha)
+        stats, bounds, seeds, samples = results
         
     else:
         gmm = model_list[-1].mm
@@ -145,6 +152,7 @@ else:
 
     
 if hps.wide_format:
+    print(acc_vec)
     stats = 100 * torch.stack([1.-torch.tensor(acc_vec),
                                torch.tensor(mmc_vec), 
                                torch.tensor(success_rate_vec),

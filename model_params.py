@@ -19,6 +19,8 @@ class MNIST_params():
              ('Noise', dl.Noise(dataset=self.data_name, batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(self.data_name, batch_size=batch_size))]
         
+        self.tinyimage_loader = dl.TinyImages(self.data_name, batch_size=100)
+        
         self.data_used = 60000
         self.epsilon = 0.3
         self.lr = 1e-3
@@ -43,6 +45,8 @@ class FMNIST_params():
              ('Noise', dl.Noise(dataset=self.data_name, batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
         
+        self.tinyimage_loader = dl.TinyImages(self.data_name, batch_size=100)
+        
         self.data_used = 60000
         self.epsilon = 0.3
         self.lr = 0.1
@@ -63,6 +67,8 @@ class SVHN_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='SVHN', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
+        
+        self.tinyimage_loader = dl.TinyImages(self.data_name, batch_size=100)
         
         self.data_used = 50000
         self.epsilon = 0.3
@@ -85,6 +91,10 @@ class CIFAR10_params():
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
         
+        self.tinyimage_loader = dl.TinyImages(self.data_name, batch_size=100)
+        self.tinyimage_loader = dl.SVHN(train=False, batch_size=100)
+        #self.tinyimage_loader = dl.LSUN_CR(train=False)
+        
         self.data_used = 50000
         self.epsilon = 0.3
         self.lr = 0.1
@@ -106,6 +116,9 @@ class CIFAR100_params():
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
+        
+        self.tinyimage_loader = dl.TinyImages(self.data_name, batch_size=100)
+        self.tinyimage_loader = dl.SVHN(train=False, batch_size=100)
         
         self.data_used = 50000
         self.epsilon = 0.3

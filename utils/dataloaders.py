@@ -14,6 +14,7 @@ test_batch_size = 100
 
 path = '../data'
 
+
 def MNIST(train=True, batch_size=None, augm_flag=True):
     if batch_size==None:
         if train:
@@ -283,13 +284,13 @@ def PrecomputeLoader(loader, batch_size=100, shuffle=True):
     return data_utils.DataLoader(train, batch_size=batch_size, shuffle=shuffle)
 
 
-def TinyImages(dataset, batch_size=None):
+def TinyImages(dataset, batch_size=None, shuffle=False):
     if batch_size is None:
         batch_size = train_batch_size
     
     dataset_out = TinyImagesDataset(dataset)
     loader = torch.utils.data.DataLoader(dataset_out, batch_size=batch_size, 
-                                         shuffle=False, num_workers=4)
+                                         shuffle=shuffle, num_workers=4)
     return loader
 
 
@@ -360,6 +361,7 @@ class TinyImagesDataset(torch.utils.data.Dataset):
                                 self, batch_size=128, shuffle=False,
                                 num_workers=4, pin_memory=True)
 
+        
 datasets_dict = {'MNIST':          MNIST,
                  'FMNIST':         FMNIST,
                  'cifar10_gray':   GrayCIFAR10,

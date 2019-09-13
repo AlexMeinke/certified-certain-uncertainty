@@ -5,10 +5,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from scipy.spatial.distance import pdist, cdist, squareform
+import utils.dataloaders as dl
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegressionCV
 
 
 ### Mahalanobis Detector
+
 
 class Mahalanobis(nn.Module):
     def __init__(self, model, model_params, device=torch.device('cpu')):
@@ -45,19 +49,16 @@ class Mahalanobis(nn.Module):
         
         self.class_vec = nn.Parameter(torch.arange(self.num_classes)[None,:], requires_grad=False)
         
-        self.scale_factor = 500.
+        self.scale_factor = 1.
         
         self.to(device)
+        self.eval()
+        
         self.grid_search_variables(model_params, device)
         
+        
     def forward(self, data):
-        data
-        conf = []
-        for i in range(len(self.sample_mean)):
-            out = self.forward_layer(data, i)
-            conf.append(out)
-            
-        conf = (torch.stack(conf, 0) * self.alpha[:,None]).sum(0)
+        conf = self.forward_all_layers(data).sum(0)
         
         out = self.model(data)
         idx = out.max(1)[1]
@@ -65,6 +66,16 @@ class Mahalanobis(nn.Module):
         out = -np.inf*torch.ones_like(out)
         out[idx] = conf / self.scale_factor
         return out
+    
+    def forward_all_layers(self, data):
+        conf = []
+        for i in range(len(self.sample_mean)):
+            out = self.forward_layer(data, i)
+            conf.append(out)
+            
+        conf = (torch.stack(conf, 0) * self.alpha[:,None])
+        
+        return conf
     
     def forward_layer(self, data, layer_index):
         with torch.enable_grad():
@@ -116,7 +127,10 @@ class Mahalanobis(nn.Module):
             else:
                 noise_gaussian_score = torch.cat((noise_gaussian_score, term_gau.view(-1,1)), 1)      
 
+        
         noise_gaussian_score, _ = torch.max(noise_gaussian_score, dim=1)
+        
+        #noise_gaussian_score *= (noise_gaussian_score < 0).float()
         
         tempInputs = data + self.magnitude * gradient
         
@@ -205,58 +219,67 @@ class Mahalanobis(nn.Module):
         return sample_class_mean, precision
     
     def grid_search_variables(self, model_params, device):
-        shape = next(iter(model_params.train_loader))[0][0].shape
-        temperatures = [1]
-        epsilons = np.linspace(0, 0.004, 5)
+        #shape = next(iter(model_params.train_loader))[0][0].shape
 
-        grid = []
+        #epsilons = np.linspace(0, 0.004, 5)
+        epsilons = [0.0, 0.01, 0.005, 0.002, 0.0014, 0.001, 0.0005]
 
-        for T in temperatures:
-            vec = []
-            for eps in epsilons:
-                self.magnitude  = eps
-                #stats = aggregate_stats([self], device, shape, 
-                #                        classes=self.num_classes)
-                _, auroc, fp95 = test_metrics(self, device, 
-                                              model_params.train_loader,
-                                              model_params.loaders[0][1])
-                #print(str(eps)+ ': ' + str(auroc))
-                vec.append([auroc, fp95])
-            grid.append(vec)
+        vec = []
+        alpha_vec = []
+        for eps in epsilons:
+            self.magnitude  = eps
+            
+            print('Logistic regression')
+            alpha_vec.append(self.logistic_regression(model_params.train_loader, 
+                                                      model_params.tinyimage_loader))
+            
+            print('Testing')
+            _, auroc, fp95 = test_metrics(self, device, 
+                                          model_params.train_loader,
+                                          model_params.tinyimage_loader)
+            
+            print(auroc)
+            vec.append([auroc, fp95])
         
-        auroc = torch.tensor(grid)[:,:,0]
-        fp95 = torch.tensor(grid)[:,:,1]
-
+        auroc = torch.tensor(vec)[:,0]
+        fp95 = torch.tensor(vec)[:,1]
+        
+        
         ind = auroc.view(-1).argmax().item()
 
-        xv, yv = np.meshgrid(epsilons, temperatures)
-        T = yv.reshape(-1)[ind]
-        eps = xv.reshape(-1)[ind]
+        alpha = alpha_vec[ind]
+        self.alpha = nn.Parameter(alpha, requires_grad=False)
 
-        self.magnitude  = eps
+        self.magnitude  = epsilons[ind]
+        
+    def logistic_regression(self, in_loader, out_loader):
+        self.eval()
+        in_loader = iter(in_loader)
+        out_loader = iter(out_loader)
+        y = []
+        target = []
+        for _ in range(10):
+            batch_in = next(in_loader)[0].to(self.device)
+            batch_out = next(out_loader)[0].to(self.device)
+            target.append(torch.cat([torch.ones(batch_in.shape[0]),
+                                     torch.zeros(batch_out.shape[0])], 0))
+                         
+            batch = torch.cat([batch_in, batch_out], 0)
+            conf = self.forward_all_layers(batch).detach().cpu()
+            y.append(conf)
+        y = torch.cat(y, 1).t()
+        target = torch.cat(target, 0)
+        
+        clf = LogisticRegressionCV(random_state=0, solver='liblinear').fit(y, target)
+        
+        alpha = torch.tensor(clf.coef_, dtype=torch.float, device=self.device).squeeze(0)
+        self.alpha = nn.Parameter(alpha, requires_grad=False)
+        return alpha
 
 
-### Model Architecture
-    
-'''ResNet in PyTorch.
-BasicBlock and Bottleneck module is from the original ResNet paper:
-[1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
-    Deep Residual Learning for Image Recognition. arXiv:1512.03385
-PreActBlock and PreActBottleneck module is from the later paper:
-[2] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
-    Identity Mappings in Deep Residual Networks. arXiv:1603.05027
-Original code is from https://github.com/kuangliu/pytorch-cifar/blob/master/models/resnet.py
-'''
-import os
-import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from torch.nn.parameter import Parameter
-
-def conv3x3(in_planes, out_planes, stride=1):
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
 class BasicBlock(nn.Module):
@@ -264,9 +287,9 @@ class BasicBlock(nn.Module):
 
     def __init__(self, in_planes, planes, stride=1):
         super(BasicBlock, self).__init__()
-        self.conv1 = conv3x3(in_planes, planes, stride)
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = conv3x3(planes, planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
@@ -284,93 +307,12 @@ class BasicBlock(nn.Module):
         return out
 
 
-class PreActBlock(nn.Module):
-    '''Pre-activation version of the BasicBlock.'''
-    expansion = 1
-
-    def __init__(self, in_planes, planes, stride=1):
-        super(PreActBlock, self).__init__()
-        self.bn1 = nn.BatchNorm2d(in_planes)
-        self.conv1 = conv3x3(in_planes, planes, stride)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv2 = conv3x3(planes, planes)
-
-        if stride != 1 or in_planes != self.expansion*planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False)
-            )
-
-    def forward(self, x):
-        out = F.relu(self.bn1(x))
-        shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
-        out = self.conv1(out)
-        out = self.conv2(F.relu(self.bn2(out)))
-        out += shortcut
-        return out
-
-
-class Bottleneck(nn.Module):
-    expansion = 4
-
-    def __init__(self, in_planes, planes, stride=1):
-        super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, self.expansion*planes, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(self.expansion*planes)
-
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion*planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion*planes)
-            )
-
-    def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
-        out = self.bn3(self.conv3(out))
-        out += self.shortcut(x)
-        out = F.relu(out)
-        return out
-
-
-class PreActBottleneck(nn.Module):
-    '''Pre-activation version of the original Bottleneck module.'''
-    expansion = 4
-
-    def __init__(self, in_planes, planes, stride=1):
-        super(PreActBottleneck, self).__init__()
-        self.bn1 = nn.BatchNorm2d(in_planes)
-        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, self.expansion*planes, kernel_size=1, bias=False)
-
-        if stride != 1 or in_planes != self.expansion*planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion*planes, kernel_size=1, stride=stride, bias=False)
-            )
-
-    def forward(self, x):
-        out = F.relu(self.bn1(x))
-        shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
-        out = self.conv1(out)
-        out = self.conv2(F.relu(self.bn2(out)))
-        out = self.conv3(F.relu(self.bn3(out)))
-        out += shortcut
-        return out
-
-
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10, in_channels=3):
+    def __init__(self, block, num_blocks, num_classes=10, num_of_channels=3):
         super(ResNet, self).__init__()
         self.in_planes = 64
 
-        self.conv1 = conv3x3(in_channels,64)
+        self.conv1 = nn.Conv2d(num_of_channels, 64, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
         self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
@@ -385,7 +327,7 @@ class ResNet(nn.Module):
             layers.append(block(self.in_planes, planes, stride))
             self.in_planes = planes * block.expansion
         return nn.Sequential(*layers)
-    
+
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layer1(out)
@@ -394,8 +336,10 @@ class ResNet(nn.Module):
         out = self.layer4(out)
         out = F.avg_pool2d(out, 4)
         out = out.view(out.size(0), -1)
-        y = self.linear(out)
-        return F.log_softmax(y, dim=1)
+        out = self.linear(out)
+        # F.log_softmax(out, dim=1)
+        return out 
+
     
     # function to extact the multiple features
     def feature_list(self, x):
@@ -446,26 +390,11 @@ class ResNet(nn.Module):
         y = self.linear(out)
         return y, penultimate
     
-def ResNet18(num_c, in_channels=3):
-    return ResNet(PreActBlock, [2,2,2,2], num_classes=num_c, in_channels=in_channels)
-
-def ResNet34(num_c, in_channels=3):
-    return ResNet(BasicBlock, [3,4,6,3], num_classes=num_c, in_channels=in_channels)
-
-def ResNet50():
-    return ResNet(Bottleneck, [3,4,6,3])
-
-def ResNet101():
-    return ResNet(Bottleneck, [3,4,23,3])
-
-def ResNet152():
-    return ResNet(Bottleneck, [3,8,36,3])
-
-
-def test():
-    net = ResNet18()
-    y = net(torch.randn(1,3,32,32))
-    print(y.size())
+    
+def ResNet18(num_of_channels=3, num_classes=10):
+    return ResNet(BasicBlock, [2,2,2,2], 
+                  num_of_channels=num_of_channels, 
+                  num_classes=num_classes)
 
     
 class LeNet(nn.Module):
@@ -484,7 +413,7 @@ class LeNet(nn.Module):
         x = x.view(-1, 7*7*64)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
-        x = F.log_softmax(x, dim=1)
+        #x = F.log_softmax(x, dim=1)
         return x
     
     # function to extact a specific feature
@@ -530,7 +459,7 @@ class LeNet(nn.Module):
         
         x = self.fc2(F.relu(x))
         out_list.append(x)
-        x = F.log_softmax(x, dim=1)
+        x
         return x, out_list
 
     
@@ -589,7 +518,7 @@ def test_metrics(model, device, in_loader, out_loader):
         conf_out = []
         
 
-        for data_in, _ in in_loader:
+        for i, (data_in, _) in enumerate(in_loader):
             data_in = data_in.to(device)
             out = model(data_in)
             output_in = out.max(1)[0]
@@ -599,8 +528,10 @@ def test_metrics(model, device, in_loader, out_loader):
          #   idx = output_in < min_conf
          #   output_in[idx] = min_conf
             conf_in.append(output_in)
+            if i>10:
+                break;
             
-        for data_out, _ in out_loader:    
+        for i, (data_out, _) in enumerate(out_loader):    
             data_out = data_out.to(device)
             out = model(data_out)
             output_out = out.max(1)[0]
@@ -609,6 +540,8 @@ def test_metrics(model, device, in_loader, out_loader):
           #  idx = output_out < min_conf
           #  output_out[idx] = min_conf
             conf_out.append(output_out)
+            if i>10:
+                break;
             
         conf_in = torch.cat(conf_in)
         conf_out = torch.cat(conf_out)

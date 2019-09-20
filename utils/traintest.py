@@ -152,6 +152,9 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
             likelihood_loss / len(train_loader.dataset))
 
 
+margin = np.log(4.)
+
+
 def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch, 
                    lam=1., verbose=100, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
@@ -168,14 +171,11 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
     log_p_out = torch.tensor(p_out, device=device).log()
     
     
-    enum2 = iter(noise_loader)
-    
     enum = enumerate(train_loader)
     for batch_idx, (data, target) in enum:
         data, target = data.to(device), target.to(device)
         
-        
-        noise = next(enum2)[0].to(device)
+        noise = next(noise_loader)[0].to(device)
 
         optimizer.zero_grad()
         
@@ -199,6 +199,9 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
                                                log_p_out + like_in_out], 0), 0).mean()
         loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out_in, 
                                                log_p_out + like_out_out], 0), 0).mean()
+        #loss3 = - like_in_in.mean()
+        #loss4 = - like_out_out.mean()
+        #loss5 = - 0*model.mm_out.logvar.sum()
         
         
         loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4)
@@ -210,6 +213,10 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
         train_loss += loss.item()
         _, predicted = output.max(1)
         correct += predicted.eq(target).sum().item()
+        
+        threshold = model.mm.logvar.max() + margin
+        idx = model.mm_out.logvar<threshold
+        model.mm_out.logvar.data[idx] = threshold
 
         if (batch_idx % verbose == 0) and verbose>0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -235,16 +242,17 @@ def train_ACET_gmm(model, device, train_loader, optimizer, epoch,
     log_p_out = torch.tensor(p_out, device=device).log()
     
     if noise_loader is not None:
-        enum2 = enumerate(noise_loader)
+        enum2 = iter(noise_loader)
     
-    enum = enumerate(train_loader)
+    loader = enumerate(train_loader)
     for batch_idx, (data, target) in enum:
         data, target = data.to(device), target.to(device)
         
-        noise = torch.rand_like(data)
         
         if noise_loader is not None:
-            noise = enum2.__next__()[1][0].to(device)
+            noise = next(loader)[0].to(device)
+        else:
+            noise = torch.rand_like(data)
             
         noise, _ = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=40, step_size=0.01)
         model.train()
@@ -266,7 +274,7 @@ def train_ACET_gmm(model, device, train_loader, optimizer, epoch,
                                                log_p_out*torch.ones_like(like_in)], 0), 0).mean()
         loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out, 
                                                log_p_out*torch.ones_like(like_out)], 0), 0).mean()
-        loss5 = - (2 * model.mm.logvar).exp().mean()
+        #loss5 = - (2 * model.mm.logvar).exp().mean()
         
         loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4) 
 
@@ -281,7 +289,7 @@ def train_ACET_gmm(model, device, train_loader, optimizer, epoch,
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
    
 
 def train_ACET(model, device, train_loader, optimizer, epoch, 
@@ -295,15 +303,15 @@ def train_ACET(model, device, train_loader, optimizer, epoch,
     p_in = 1. / (1. + lam)
     p_out = lam * p_in
     
-    if noise_loader is not None:
-        enum2 = enumerate(noise_loader)
     
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         
-        noise = torch.rand_like(data)
+        
         if noise_loader is not None:
-            noise = enum2.__next__()[1][0].to(device)
+            noise = next(noise_loader)[0].to(device)
+        else:
+            noise = torch.rand_like(data)
             
         noise, _ = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=40, step_size=0.01)
         model.train()
@@ -332,7 +340,7 @@ def train_ACET(model, device, train_loader, optimizer, epoch,
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
 
 
 def test(model, device, test_loader, min_conf=.1):

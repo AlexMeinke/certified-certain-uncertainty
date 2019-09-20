@@ -118,6 +118,7 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
                 regret_index = losses > prev_losses
 
                 alpha[regret_index] /= 2.
+                alpha[regret_index] *= 1.1
                 data_pca[regret_index] = prev_data_pca[regret_index]
                 grad[regret_index] = prev_grad[regret_index]
                 

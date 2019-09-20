@@ -284,19 +284,27 @@ def PrecomputeLoader(loader, batch_size=100, shuffle=True):
     return data_utils.DataLoader(train, batch_size=batch_size, shuffle=shuffle)
 
 
-def TinyImages(dataset, batch_size=None, shuffle=False):
+def TinyImages(dataset, batch_size=None, shuffle=False, train=True, offset=0):
     if batch_size is None:
         batch_size = train_batch_size
+        
+        
+    dataset_out = TinyImagesDataset(dataset, offset=offset)
     
-    dataset_out = TinyImagesDataset(dataset)
-    loader = torch.utils.data.DataLoader(dataset_out, batch_size=batch_size, 
+    if train:
+        loader = torch.utils.data.DataLoader(dataset_out, batch_size=batch_size, 
                                          shuffle=shuffle, num_workers=4)
+    else:
+        sampler = TinyImagesTestSampler(dataset_out)
+        loader = torch.utils.data.DataLoader(dataset_out, batch_size=batch_size, 
+                                         shuffle=shuffle, num_workers=4, sampler=sampler)
+    
     return loader
 
 
 class TinyImagesDataset(torch.utils.data.Dataset):
 
-    def __init__(self, dataset):
+    def __init__(self, dataset, offset=0):
         if dataset in ['CIFAR10', 'CIFAR100']:
             exclude_cifar = True
         else:
@@ -310,7 +318,7 @@ class TinyImagesDataset(torch.utils.data.Dataset):
             return np.fromstring(data, dtype='uint8').reshape(32, 32, 3, order="F")
 
         self.load_image = load_image
-        self.offset = 0     # offset index
+        self.offset = offset     # offset index
         
         
         transform_base = [transforms.ToTensor()]
@@ -356,11 +364,20 @@ class TinyImagesDataset(torch.utils.data.Dataset):
     def __len__(self):
         return 79302017
     
-    def getLoader(self):
-        out_loader = torch.utils.data.DataLoader(
-                                self, batch_size=128, shuffle=False,
-                                num_workers=4, pin_memory=True)
+    
+# We want to make sure that at test time we randomly sample from images we haven't seen during training
+class TinyImagesTestSampler(torch.utils.data.Sampler):
+    def __init__(self, data_source):
+        self.data_source = data_source
+        self.min_index = 20000000
+        self.max_index = 79302017
 
+    def __iter__(self):
+        return iter(iter((torch.randperm(self.max_index-self.min_index) + self.min_index ).tolist()))
+
+    def __len__(self):
+        return self.max_index - self.min_index
+    
         
 datasets_dict = {'MNIST':          MNIST,
                  'FMNIST':         FMNIST,

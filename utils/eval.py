@@ -178,7 +178,7 @@ def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10,
             dataset = 'MNIST'
         else:
             dataset = 'CIFAR10'
-        out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size))
+        out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size, train=False))
 
     for _ in range(batches):
         if out_seeds:

@@ -17,9 +17,9 @@ parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_c
 
 parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
 parser.add_argument('--steps', type=int, default=500, help='num of attack steps.')
-parser.add_argument('--restarts', type=int, default=20, help='num of restarts in attack.')
+parser.add_argument('--restarts', type=int, default=50, help='num of restarts in attack.')
 parser.add_argument('--alpha', type=float, default=3., help='initial step size.')
-parser.add_argument('--batches', type=int, default=10, help='number of batches to test on.')
+parser.add_argument('--batches', type=int, default=2, help='number of batches to test on.')
 parser.add_argument('--batch_size', type=int, default=100, help='size of batches that one tests on.')
 parser.add_argument('--datasets', nargs='+', type=str, required=True, 
                     help='datasets to run attack on.')

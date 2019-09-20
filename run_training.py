@@ -22,6 +22,8 @@ from tensorboardX import SummaryWriter
 import argparse
 
 
+
+
 parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_chars='-')
 
 parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
@@ -58,7 +60,7 @@ if hps.warmstart!='None':
 if hps.lr is None:
     hps.lr = model_params.lr
     
-if hps.fit_out:
+if hps.fit_out and hps.train_type=='CEDA_GMM':
     hps.train_type = 'CEDA_GMM_OUT'
 
 
@@ -96,19 +98,21 @@ if hps.use_gmm:
         saving_string += ' ' + name
     if hps.gmm_path is not None:
         saving_string += '_customGMM'
-    if hps.fit_out is not None:
-        saving_string += '_OUT'
+    
 else:
     saving_string = ('base_' + hps.dataset
                      +'_lr' + str(hps.lr)
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type))
-
+    
+if hps.fit_out is not None:
+        saving_string += '_OUT'
 
 if hps.warmstart!='None':
     saving_string += '_warmstart'
 if hps.train_type=='ACET':
     saving_string += '_steps' + str(hps.steps)
+    
 
 if torch.cuda.is_available():
     device = torch.device('cuda:' + str(hps.gpu))
@@ -162,7 +166,7 @@ lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.loglam)
 writer = SummaryWriter('logs/'+saving_string+str(datetime.datetime.now()))
 
 if hps.fit_out:
-    noise_loader = dl.TinyImages(hps.dataset, shuffle=True)
+    noise_loader = iter(dl.TinyImages(hps.dataset, shuffle=False))
 else:
     noise_loader = None
 
@@ -187,6 +191,10 @@ for epoch in range(hps.epochs):
     writer.add_scalar('InDistribution/TestLoss', test_loss, epoch)
     writer.add_scalar('InDistribution/TestMMC', av_conf, epoch)
     writer.add_scalar('InDistribution/TestAccuracy', correct, epoch)
+    
+    if hps.train_type=='CEDA_GMM_OUT':
+        writer.add_scalar('InDistribution/InVar', model.mm.logvar.max(), epoch)
+        writer.add_scalar('InDistribution/OutVar', model.mm_out.logvar.min(), epoch)
     writer.close()
     
     torch.save(model, 'Checkpoints/' + saving_string + '.pth')

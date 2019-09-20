@@ -62,7 +62,10 @@ def get_b_out(r, x, gmm, gmm_out, b=1.):
     exponent = exponent**2 / (2*var)
     exponent_out = exponent_out**2 / (2*var_out)
     
+    
     bound = (torch.logsumexp(gmm.alpha - norm_const - exponent, 0).detach().cpu().item()
              - torch.logsumexp(gmm_out.alpha - norm_const_out - exponent_out, 0).detach().cpu().item()
              - np.log(b))
+    
+    #bound2 = torch.logsumexp(gmm.alpha - norm_const - exponent, 0).detach().cpu().item()
     return bound

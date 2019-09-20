@@ -94,17 +94,24 @@ class PerceptualPCA(Metric):
                         self.model(y)[:,self.indices][:,None,:], dim=dim)
 
     
-    
 class PCAMetric(Metric):
-    def __init__(self, X, p=2, min_sv_factor=100.):
+    def __init__(self, X, p=2, min_sv_factor=100., covar=None):
         super().__init__()
         self.p = p
-        X = np.array(X)
-        pca = PCA()
-        pca.fit(X)
+        
+        if covar is None:
+            X = np.array(X)
+            pca = PCA()
+            pca.fit(X)
 
-        self.comp_vecs = nn.Parameter(torch.tensor(pca.components_), requires_grad=False)
-        self.singular_values = torch.tensor(pca.singular_values_)
+            self.comp_vecs = nn.Parameter(torch.tensor(pca.components_), requires_grad=False)
+            self.singular_values = torch.tensor(pca.singular_values_)
+        else:
+            singular_values, comp_vecs = np.linalg.eig(covar)
+
+            self.comp_vecs = nn.Parameter(torch.tensor(comp_vecs, dtype=torch.float), requires_grad=False)
+            self.singular_values = torch.tensor(singular_values, dtype=torch.float)
+            
         self.min_sv = self.singular_values[0] / min_sv_factor
         self.singular_values[self.singular_values<self.min_sv] = self.min_sv
         self.singular_values = nn.Parameter(self.singular_values, requires_grad=False)

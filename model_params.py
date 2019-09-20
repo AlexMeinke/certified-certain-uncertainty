@@ -16,6 +16,7 @@ class MNIST_params():
         self.loaders = [('FMNIST', dl.FMNIST(train=False)), 
              ('EMNIST', dl.EMNIST(train=False)),
              ('GrayCIFAR10', dl.GrayCIFAR10(train=False)),
+        #     ('TinyImages', dl.TinyImages(self.data_name, batch_size=batch_size, train=False)),
              ('Noise', dl.Noise(dataset=self.data_name, batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(self.data_name, batch_size=batch_size))]
         
@@ -42,6 +43,7 @@ class FMNIST_params():
         self.loaders = [('MNIST', dl.MNIST(train=False)), 
              ('EMNIST', dl.EMNIST(train=False)),
              ('GrayCIFAR10', dl.GrayCIFAR10(train=False)),
+        #     ('TinyImages', dl.TinyImages(self.data_name, batch_size=batch_size, train=False)),
              ('Noise', dl.Noise(dataset=self.data_name, batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
         
@@ -65,6 +67,7 @@ class SVHN_params():
              ('CIFAR100', dl.CIFAR100(train=False)),
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
+        #     ('TinyImages', dl.TinyImages(self.data_name, batch_size=batch_size, train=False)),
              ('Noise', dl.Noise(dataset='SVHN', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
         
@@ -88,6 +91,7 @@ class CIFAR10_params():
              ('CIFAR100', dl.CIFAR100(train=False)),
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
+        #     ('TinyImages', dl.TinyImages(self.data_name, batch_size=batch_size, train=False)),
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
         
@@ -114,6 +118,7 @@ class CIFAR100_params():
              ('CIFAR10', dl.CIFAR10(train=False)),
              ('LSUN_CR', dl.LSUN_CR(train=False)),
              ('Imagenet-',dl.ImageNetMinusCifar10(train=False)),
+        #     ('TinyImages', dl.TinyImages(self.data_name, batch_size=batch_size, train=False)),
              ('Noise', dl.Noise(dataset='CIFAR10', batch_size=batch_size)),
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
         

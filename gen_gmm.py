@@ -27,7 +27,6 @@ dim = params.dim
 loader = params.train_loader
 hps.data_used = params.data_used if hps.data_used is None else hps.data_used
 
-"""
 X = []
 for x, f in loader:
     X.append(x.view(-1,dim))
@@ -72,8 +71,8 @@ for n in hps.n:
 
 
     torch.save(gmm, saving_string + '.pth')
-"""
 
+"""
 ### Only temporary!!!
 saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
                  +'_n' + str(hps.n[0])
@@ -83,13 +82,14 @@ saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
 gmm = torch.load(saving_string)
 metric = gmm.metric
 ### Only temporary!!!
-    
+"""
+
 out_loader = dl.TinyImages(hps.dataset)
 
     
 X = []
 for idx, (x, f) in enumerate(out_loader):
-    if idx>100:
+    if idx>200:
         break;
     X.append(x.view(-1,dim))
 X = torch.cat(X, 0)

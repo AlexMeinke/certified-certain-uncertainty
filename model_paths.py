@@ -48,15 +48,17 @@ class MNIST_models():
         
         file_maha = ('SavedModels/other/mahalanobis/MNIST.pth')
         
+        file_single_maha = ('SavedModels/other/single_mahalanobis/MNIST.pth')
+        
         file_MCDO = ('SavedModels/other/mcdo/MNIST.pth')
         
         
         
         files = [file_base, file_MCDO, file_GAN,
-                 file_ODIN, file_ACET_OUT,
+                 file_ODIN, file_single_maha, file_ACET_OUT,
                  file_hendrycks, file_CCU_double, file_joint]
         
-        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'ACET', 'OE', 'CCUd', 'CCU']
+        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'Maha', 'ACET', 'OE', 'CCUd', 'CCU']
         
         #files = [file_ACET_OUT, file_CCU_double, file_joint]
         
@@ -111,21 +113,17 @@ class FMNIST_models():
         
         file_maha = ('SavedModels/other/mahalanobis/FMNIST.pth')
         
+        file_single_maha = ('SavedModels/other/single_mahalanobis/FMNIST.pth')
+        
         file_MCDO = ('SavedModels/other/mcdo/FMNIST.pth')
         
         
-        files = [file_base, file_CEDA, file_ACET, file_ACET_OUT,
-                 file_GAN, file_MCDO, file_ODIN, 
-                 file_maha, file_hendrycks, file_CCU_double, file_joint]
-        
-        keys = ['Base', 'CEDA', 'ACET', 'ACET2', 'GAN', 'MCD', 'ODIN', 'Maha', 'OE', 'CCUd', 'CCU']
-        
         
         files = [file_base, file_MCDO, file_GAN,
-                 file_ODIN, file_ACET_OUT,
+                 file_ODIN, file_single_maha, file_ACET_OUT,
                  file_hendrycks, file_CCU_double, file_joint]
         
-        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'ACET', 'OE', 'CCUd', 'CCU']
+        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'Maha', 'ACET', 'OE', 'CCUd', 'CCU']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
        
@@ -174,6 +172,8 @@ class SVHN_models():
         
         file_maha = ('SavedModels/other/mahalanobis/SVHN.pth')
         
+        file_single_maha = ('SavedModels/other/single_mahalanobis/SVHN.pth')
+        
         file_MCDO = ('SavedModels/other/mcdo/SVHN.pth')
         
         
@@ -185,10 +185,10 @@ class SVHN_models():
         
         
         files = [file_base, file_MCDO, file_GAN,
-                 file_ODIN, file_ACET_OUT,
+                 file_ODIN, file_single_maha, file_ACET_OUT,
                  file_hendrycks, file_CCU_double, file_joint]
         
-        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'ACET', 'OE', 'CCUd', 'CCU']
+        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'Maha', 'ACET', 'OE', 'CCUd', 'CCU']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
 
@@ -231,7 +231,6 @@ class CIFAR10_models():
         
         file_hendrycks = ('SavedModels/other/outlier-exposure/hendrycks_CIFAR10.pth')
         
-        file_mahalanobis = ('SavedModels/other/mahalanobis/CIFAR10.pth')
         
         file_GAN = ('SavedModels/other/gan/CIFAR10.pth')
         
@@ -239,16 +238,18 @@ class CIFAR10_models():
         
         file_maha = ('SavedModels/other/mahalanobis/CIFAR10.pth')
         
+        file_single_maha = ('SavedModels/other/single_mahalanobis/CIFAR10.pth')
+        
         file_MCDO = ('SavedModels/other/mcdo/CIFAR10.pth')
         
        
         
         
         files = [file_base, file_MCDO, file_GAN,
-                 file_ODIN, file_ACET_OUT,
+                 file_ODIN, file_single_maha, file_ACET_OUT,
                  file_hendrycks, file_CCU_double, file_joint]
         
-        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'ACET', 'OE', 'CCUd', 'CCU']
+        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'Maha', 'ACET', 'OE', 'CCUd', 'CCU']
         
         
        # files = [file_ACET_OUT, file_CCU_double, file_joint]
@@ -299,16 +300,16 @@ class CIFAR100_models():
         
         file_maha = ('SavedModels/other/mahalanobis/CIFAR100.pth')
         
+        file_single_maha = ('SavedModels/other/single_mahalanobis/CIFAR100.pth')
         
         file_MCDO = ('SavedModels/other/mcdo/CIFAR100.pth')
         
         
         files = [file_base, file_MCDO, file_GAN,
-                 file_ODIN, file_ACET_OUT,
+                 file_ODIN, file_single_maha, file_ACET_OUT,
                  file_hendrycks, file_CCU_double, file_joint]
         
-        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'ACET', 'OE', 'CCUd', 'CCU']
-        
+        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'Maha', 'ACET', 'OE', 'CCUd', 'CCU']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
         

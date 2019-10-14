@@ -74,7 +74,6 @@ class ModelODIN(nn.Module):
 def grid_search_variables(base_model, model_params, device, out_seeds=False):
     shape = next(iter(model_params.cali_loader))[0][0].shape
     temperatures = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-    #temperatures = [200, 500, 1000]
 
     epsilons = np.linspace(0, 0.004, 21)
 
@@ -146,7 +145,6 @@ def aggregate_stats(model_list, device, shape, classes=10,
         out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size))
 
     for _ in range(batches):
-        seed = torch.rand((batch_size,)+tuple(shape), device=device)
 
         if out_seeds:
             seed = next(out_loader)[0].to(device)

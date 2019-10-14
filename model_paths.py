@@ -16,7 +16,7 @@ class MNIST_models():
                      'base_MNIST_lr0.001_augm_flagTrue_train_typeCEDA.pth'
                     )
 
-        file_ODIN = ('SavedModels/odin/'
+        file_ODIN = ('SavedModels/other/odin/'
                      'MNIST_OUTSEEDS_ODIN.pth'
                     )
         
@@ -83,7 +83,7 @@ class FMNIST_models():
                      'base_FMNIST_lr0.1_augm_flagTrue_train_typeCEDA.pth'
                     )
 
-        file_ODIN = ('SavedModels/odin/'
+        file_ODIN = ('SavedModels/other/odin/'
                      'FMNIST_OUTSEEDS_ODIN.pth'
                     )
         
@@ -143,7 +143,7 @@ class SVHN_models():
                      'base_SVHN_lr0.1_augm_flagTrue_train_typeCEDA.pth'
                     )
 
-        file_ODIN = ('SavedModels/odin/'
+        file_ODIN = ('SavedModels/other/odin/'
                      'SVHN_OUTSEEDS_ODIN.pth'
                     )
         
@@ -208,7 +208,7 @@ class CIFAR10_models():
                      'base_CIFAR10_lr0.1_augm_flagTrue_train_typeCEDA.pth'
                     )
 
-        file_ODIN = ('SavedModels/odin/'
+        file_ODIN = ('SavedModels/other/odin/'
                      'CIFAR10_OUTSEEDS_ODIN.pth'
                     )
         
@@ -274,7 +274,7 @@ class CIFAR100_models():
                      'base_CIFAR100_lr0.1_augm_flagTrue_train_typeCEDA.pth'
                     )
 
-        file_ODIN = ('SavedModels/odin/'
+        file_ODIN = ('SavedModels/other/odin/'
                      'CIFAR100_OUTSEEDS_ODIN.pth'
                     )
         

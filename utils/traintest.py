@@ -131,7 +131,6 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
                                                log_p_out*torch.ones_like(like_in)], 0), 0).mean()
         loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out, 
                                                log_p_out*torch.ones_like(like_out)], 0), 0).mean()
-        # loss5 = 16663. * model.mm.K * (2 * model.mm.logvar).exp().sum()
         
         loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4)
         
@@ -199,9 +198,6 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
                                                log_p_out + like_in_out], 0), 0).mean()
         loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out_in, 
                                                log_p_out + like_out_out], 0), 0).mean()
-        #loss3 = - like_in_in.mean()
-        #loss4 = - like_out_out.mean()
-        #loss5 = - 0*model.mm_out.logvar.sum()
         
         
         loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4)
@@ -363,6 +359,22 @@ def test(model, device, test_loader, min_conf=.1):
     correct /= len(test_loader.dataset)
     
     return correct, av_conf, test_loss
+
+
+def get_mean(model, device, test_loader):
+    model.eval()
+    conf = []
+    with torch.no_grad():
+        for data, _ in test_loader:
+            data = data.to(device)
+            output = model(data)
+
+            conf.append(output.max(1)[0].cpu())
+            
+    conf = torch.cat(conf, 0)
+    
+    
+    return conf.mean()
 
 
 training_dict = {'plain': train_plain,

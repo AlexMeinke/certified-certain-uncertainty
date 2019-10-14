@@ -259,6 +259,7 @@ class GMM(MixtureModel):
         """
         super().__init__(K, D, mu, logvar, alpha, metric)
         self.norm_const = .5 * torch.tensor(2*np.pi).log() * self.D + .5 * metric.norm_const
+        self.norm_const = nn.Parameter(self.norm_const, requires_grad=False)
 
     def forward(self, X):
         """
@@ -268,6 +269,7 @@ class GMM(MixtureModel):
         """
         a = self.metric(X[None,:,:], self.mu[:,None,:], dim=2)**2
         b = self.logvar[:,None].exp()
+        
         return (self.alpha[:,None] - .5*self.D*self.logvar[:,None]
                 - .5*( a/b ) - self.norm_const)
     
@@ -329,8 +331,8 @@ class RobustModel(nn.Module):
         self.dim = dim
         self.mm = mixture_model
 
-        self.loglam = nn.Parameter(torch.tensor(loglam, dtype=torch.float))
-        self.log_K = -torch.tensor(classes, dtype=torch.float).log()
+        self.loglam = nn.Parameter(torch.tensor(loglam, dtype=torch.float), requires_grad=False)
+        self.log_K = nn.Parameter(-torch.tensor(classes, dtype=torch.float).log(), requires_grad=False)
         
         
     def forward(self, x):
@@ -339,7 +341,6 @@ class RobustModel(nn.Module):
         like = torch.logsumexp(likelihood_per_peak, dim=0)
 
         x = self.base_model(x)
-        
         a1 = torch.stack( (x + like[:,None], (self.loglam + self.log_K)*torch.ones_like(x) ), 0)
         b1 = torch.logsumexp(a1, 0).squeeze()
 
@@ -358,8 +359,8 @@ class DoublyRobustModel(nn.Module):
         self.mm = mixture_model_in
         self.mm_out = mixture_model_out
 
-        self.loglam = nn.Parameter(torch.tensor(loglam, dtype=torch.float))
-        self.log_K = -torch.tensor(classes, dtype=torch.float).log()
+        self.loglam = nn.Parameter(torch.tensor(loglam, dtype=torch.float), requires_grad=False)
+        self.log_K = nn.Parameter(-torch.tensor(classes, dtype=torch.float).log(), requires_grad=False)
         
         
     def forward(self, x):

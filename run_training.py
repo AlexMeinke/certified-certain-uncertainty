@@ -22,8 +22,6 @@ from tensorboardX import SummaryWriter
 import argparse
 
 
-
-
 parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_chars='-')
 
 parser.add_argument('--gpu', type=int, default=0, help='GPU index.')

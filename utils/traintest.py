@@ -16,7 +16,7 @@ def train_plain(model, device, train_loader, optimizer, epoch,
     train_loss = 0
     correct = 0
     
-    p_in = 1. / (1. + lam)
+    p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
     
 
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -48,8 +48,8 @@ def train_CEDA(model, device, train_loader, optimizer, epoch,
     train_loss = 0
     correct = 0
     
-    p_in = 1. / (1. + lam)
-    p_out = lam * p_in
+    p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
+    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
     
     if noise_loader is not None:
         enum = enumerate(noise_loader)
@@ -96,11 +96,11 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
     likelihood_loss = 0
     correct = 0
     
-    p_in = 1. / (1. + lam)
-    p_out = lam * p_in
+    p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
+    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
     
-    log_p_in = torch.tensor(p_in, device=device).log()
-    log_p_out = torch.tensor(p_out, device=device).log()
+    log_p_in = p_in.log()
+    log_p_out = p_out.log()
     
     if noise_loader is not None:
         enum2 = enumerate(noise_loader)
@@ -163,11 +163,11 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
     likelihood_loss = 0
     correct = 0
     
-    p_in = 1. / (1. + lam)
-    p_out = lam * p_in
+    p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
+    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
     
-    log_p_in = torch.tensor(p_in, device=device).log()
-    log_p_out = torch.tensor(p_out, device=device).log()
+    log_p_in = p_in.log()
+    log_p_out = p_out.log()
     
     
     enum = enumerate(train_loader)
@@ -221,71 +221,6 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
     return (train_loss / len(train_loader.dataset), 
             correct / len(train_loader.dataset), 
             likelihood_loss / len(train_loader.dataset))
-
-
-def train_ACET_gmm(model, device, train_loader, optimizer, epoch, 
-                   lam=1., verbose=100, noise_loader=None, epsilon=.3):
-    criterion = nn.NLLLoss()
-    model.train()
-    
-    train_loss = 0
-    correct = 0
-    
-    p_in = 1. / (1. + lam)
-    p_out = lam * p_in
-    
-    log_p_in = torch.tensor(p_in, device=device).log()
-    log_p_out = torch.tensor(p_out, device=device).log()
-    
-    if noise_loader is not None:
-        enum2 = iter(noise_loader)
-    
-    loader = enumerate(train_loader)
-    for batch_idx, (data, target) in enum:
-        data, target = data.to(device), target.to(device)
-        
-        
-        if noise_loader is not None:
-            noise = next(loader)[0].to(device)
-        else:
-            noise = torch.rand_like(data)
-            
-        noise, _ = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=40, step_size=0.01)
-        model.train()
-
-        optimizer.zero_grad()
-        
-        full_data = torch.cat([data, noise], 0)
-        full_out = model(full_data)
-        
-        output = full_out[:data.shape[0]]
-        output_adv = full_out[data.shape[0]+1:]
-        
-        like_in = torch.logsumexp( model.mm(data.view(data.shape[0], -1)), 0 )
-        like_out =  torch.logsumexp( model.mm(noise.view(noise.shape[0], -1)), 0 )
-        
-        loss1 = criterion(output, target)
-        loss2 = - output_adv.mean()
-        loss3 = - torch.logsumexp(torch.stack([log_p_in + like_in, 
-                                               log_p_out*torch.ones_like(like_in)], 0), 0).mean()
-        loss4 = - torch.logsumexp(torch.stack([log_p_in + like_out, 
-                                               log_p_out*torch.ones_like(like_out)], 0), 0).mean()
-        #loss5 = - (2 * model.mm.logvar).exp().mean()
-        
-        loss =  p_in*(loss1 + loss3) + p_out*(loss2 + loss4) 
-
-        loss.backward()
-        optimizer.step()
-        
-        train_loss += loss.item()
-        _, predicted = output.max(1)
-        correct += predicted.eq(target).sum().item()
-
-        if (batch_idx % verbose == 0) and verbose>0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
-    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
    
 
 def train_ACET(model, device, train_loader, optimizer, epoch, 
@@ -296,8 +231,8 @@ def train_ACET(model, device, train_loader, optimizer, epoch,
     train_loss = 0
     correct = 0
     
-    p_in = 1. / (1. + lam)
-    p_out = lam * p_in
+    p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
+    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
     
     
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -322,7 +257,6 @@ def train_ACET(model, device, train_loader, optimizer, epoch,
         loss1 = criterion(output, target)
         loss2 = - output_adv.mean()
         
-        #print(str(loss1) + '   ' + str(loss2) + '\n')
         loss = p_in*loss1 + p_out*loss2
 
         optimizer.zero_grad()
@@ -380,7 +314,6 @@ def get_mean(model, device, test_loader):
 training_dict = {'plain': train_plain,
                   'CEDA': train_CEDA,
                   'CEDA_GMM' : train_CEDA_gmm,
-                  'ACET_GMM' : train_ACET_gmm,
                   'ACET' : train_ACET,
                   'CEDA_GMM_OUT' : train_CEDA_gmm_out,
                 }

@@ -2,3 +2,5 @@ SavedModels/
 Checkpoints/
 results/
 logs/
+_*
+.*

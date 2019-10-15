@@ -10,12 +10,12 @@ python gen_gmm.py --dataset MNIST --PCA 1 --augm_flag 1
 ```
 The PCA option refers to the fact that we use a modified distance metric. 
 
-Most models in the paper are trained via the script in **run_training.py**. Hyper parameters can be passed as options, but defaults are stored in **model_params.py**. For example the following lines train a plain model, [ACET](https://arxiv.org/abs/1812.05720) model and a CCU model on augmented data on MNIST.
+Most models in the paper are trained via the script in **run_training.py**. Hyper parameters can be passed as options, but defaults are stored in **model_params.py**. For example the following lines train a plain model, [ACET](https://arxiv.org/abs/1812.05720) model and a [CCU](https://arxiv.org/abs/1909.12180) model on augmented data on MNIST.
 
 ```
-python run_training --dataset MNIST --train_type plain --augm_flag 1
-python run_training --dataset MNIST --train_type ACET --augm_flag 1
-python run_training --dataset MNIST --train_type CEDA_GMM --augm_flag 1 --use_gmm 1 --PCA 1 --fit_out 1
+python run_training.py --dataset MNIST --train_type plain --augm_flag 1
+python run_training.py --dataset MNIST --train_type ACET --augm_flag 1
+python run_training.py --dataset MNIST --train_type CEDA_GMM --augm_flag 1 --use_gmm 1 --PCA 1 --fit_out 1
 ```
 For all commands (except **gen_gmm.py**) one can specify, which GPU to train on via the --gpu option. All model paths for models that one wishes to use as base models or for testing should be stored in **model_paths.py**.
 

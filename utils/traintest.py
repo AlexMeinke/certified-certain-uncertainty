@@ -37,7 +37,7 @@ def train_plain(model, device, train_loader, optimizer, epoch,
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
   
     
 def train_CEDA(model, device, train_loader, optimizer, epoch, 
@@ -84,7 +84,7 @@ def train_CEDA(model, device, train_loader, optimizer, epoch,
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset)
+    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
 
 
 def train_CEDA_gmm(model, device, train_loader, optimizer, epoch, 

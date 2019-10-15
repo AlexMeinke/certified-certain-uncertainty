@@ -72,17 +72,6 @@ for n in hps.n:
 
     torch.save(gmm, saving_string + '.pth')
 
-"""
-### Only temporary!!!
-saving_string = ('SavedModels/GMM/gmm_' + hps.dataset
-                 +'_n' + str(hps.n[0])
-                 +'_data_used' + str(hps.data_used)
-                 +'_augm_flag' + str(hps.augm_flag) + '_PCA.pth')
-
-gmm = torch.load(saving_string)
-metric = gmm.metric
-### Only temporary!!!
-"""
 
 out_loader = dl.TinyImages(hps.dataset)
 

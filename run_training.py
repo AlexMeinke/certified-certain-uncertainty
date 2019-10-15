@@ -103,8 +103,8 @@ else:
                      +'_augm_flag' + str(hps.augm_flag)
                      +'_train_type' + str(hps.train_type))
     
-if hps.fit_out is not None:
-        saving_string += '_OUT'
+if hps.fit_out:
+    saving_string += '_OUT'
 
 if hps.warmstart!='None':
     saving_string += '_warmstart'

@@ -1,3 +1,9 @@
+'''
+    Helper scripts for measuring out-of-distribution detection performance
+    and for generating pandas Dataframes from the results
+'''
+
+
 import torch
 import numpy as np
 import pandas as pd
@@ -225,6 +231,7 @@ def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10,
     return stats, bounds, seeds, samples
 
 
+# When executing gen_attack_stats.py these data are saved
 class StatsContainer(torch.nn.Module):
     def __init__(self, stats, bounds, seeds, samples):
         self.stats = stats

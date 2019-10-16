@@ -5,6 +5,10 @@ import utils.adversarial as adv
 import numpy as np
 
 
+# All different training schemes that run_training.py accesses are bundled here
+# not all of them require all arguments (e.g. epsilon) 
+# but this way one can keep a constistent interface
+
 def train_plain(model, device, train_loader, optimizer, epoch, 
                 lam=1., verbose=100, noise_loader=None, epsilon=.3):
     # lam not necessarily needed but there to ensure that the 
@@ -40,6 +44,9 @@ def train_plain(model, device, train_loader, optimizer, epoch,
     return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
   
     
+# CEDA as introduced in https://arxiv.org/pdf/1812.05720.pdf
+# uses either uniform noise or noise_loader
+# not used in paper because conceptually identical to outlier-exposure https://arxiv.org/abs/1812.04606
 def train_CEDA(model, device, train_loader, optimizer, epoch, 
                lam=1., verbose=100, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
@@ -87,6 +94,8 @@ def train_CEDA(model, device, train_loader, optimizer, epoch,
     return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
 
 
+# CEDA training for case where one fits a CCU model with p(x|o)=1
+# not used in paper because there we fit p(x|o)
 def train_CEDA_gmm(model, device, train_loader, optimizer, epoch, 
                    lam=1., verbose=100, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
@@ -151,8 +160,12 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
             likelihood_loss / len(train_loader.dataset))
 
 
-margin = np.log(4.)
 
+
+# CEDA training for CCU model where both in- and out-distribution are learned
+# the margin is introduced to ensure that the sigmas of the out-distribution are
+# always larger than for the in-distribution
+margin = np.log(4.)
 
 def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch, 
                    lam=1., verbose=100, noise_loader=None, epsilon=.3):
@@ -221,8 +234,9 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
     return (train_loss / len(train_loader.dataset), 
             correct / len(train_loader.dataset), 
             likelihood_loss / len(train_loader.dataset))
-   
 
+
+# ACET as introduced in https://arxiv.org/pdf/1812.05720.pdf
 def train_ACET(model, device, train_loader, optimizer, epoch, 
                lam=1., verbose=-1, noise_loader=None, epsilon=.3):
     criterion = nn.NLLLoss()
@@ -306,7 +320,6 @@ def get_mean(model, device, test_loader):
             conf.append(output.max(1)[0].cpu())
             
     conf = torch.cat(conf, 0)
-    
     
     return conf.mean()
 

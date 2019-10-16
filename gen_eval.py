@@ -1,3 +1,9 @@
+'''
+    Generates tables to evaluate out-of-distribution detection performance of models
+    specified in model_paths.py using datasets specified in model_params.py
+    Output goes to results/ as .csv, .txt (latex code) and as pickle (for pandas to recover it)
+'''
+
 import torch
 import model_paths
 import model_params as params

@@ -1,3 +1,10 @@
+'''
+        ODIN
+        
+    https://arxiv.org/abs/1706.02690
+'''
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

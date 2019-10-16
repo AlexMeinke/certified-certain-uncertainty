@@ -4,6 +4,11 @@ import torch.utils.data as data_utils
 
 
 def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False, steps=40, step_size=0.01):
+    '''
+        Runs an adversarial noise attack in l_2 norm
+        Maximizes the confidence in some class (different from adversarial
+        attack which maximizes confidence in some wrong class)
+    '''
     model.eval()
     batch_size = seed.shape[0]
     orig_data = seed.clone()
@@ -73,6 +78,15 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False, s
 
 
 def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, steps=40, alpha=0.01):
+    '''
+        Runs an adversarial noise attack in Mahalanobis space
+        takes a models.MyPCA object to get the orientation of the ellipsoid
+        Since simultaneous projection onto a rotated ellipsoid and the [0,1]^D box
+        is challenging, I instead rotate the coordinate system back and forth and 
+        project once per gradient step.
+        This doesn't guarantee a solution in the intersection so in the end I do
+        10 more alternating projection steps.
+    '''
     model.eval()
     batch_size = seed.shape[0]
     orig_data = seed.clone()
@@ -171,6 +185,10 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
     
 
 def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.001):
+    '''
+        Runs adversarial attack in l_2 norm
+        ot used for the results in https://arxiv.org/abs/1909.12180
+    '''
     model.eval()
     correct_index = label[:,None]!=torch.arange(10)[None,:]
     with torch.no_grad():
@@ -206,6 +224,8 @@ def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=
     return data.detach()
 
 
+# deprecated functions that help evaluate OOD detection on adversaries 
+# in the same pipeline as regular datasets
 def create_adv_noise_loader(model, dataloader, device, batches=50):
     new_data = []
     for batch_idx, (data, target) in enumerate(dataloader):

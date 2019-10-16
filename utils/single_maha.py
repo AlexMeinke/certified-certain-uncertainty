@@ -1,3 +1,9 @@
+'''
+        Mahalanobis detector (Maha)
+        
+    The single layer version from https://arxiv.org/abs/1807.03888
+'''
+
 from __future__ import print_function
 import torch
 import numpy as np

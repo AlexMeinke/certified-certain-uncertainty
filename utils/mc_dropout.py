@@ -1,3 +1,11 @@
+'''
+        Monte-Carlo Dropout (MCD)
+        
+    Code implementing https://arxiv.org/abs/1506.02142 for classification
+    Uses VGG because ResNets originally don't have Dropout layers
+'''
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,6 +20,7 @@ class MC_dropout(nn.Dropout):
         
     def eval(self):
         return
+    
     
 class VGG(nn.Module):
 
@@ -56,6 +65,7 @@ class VGG(nn.Module):
                 m.weight.data.normal_(0, 0.01)
                 m.bias.data.zero_()
 
+                
 def make_layers(cfg, in_channels):
     layers = []
     for v in cfg:
@@ -74,6 +84,7 @@ cfg = {
     'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
     'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
 }
+
 
 def vgg13(pretrained=False, in_channels=3, **kwargs):
     """VGG 13-layer model (configuration "B")
@@ -139,7 +150,9 @@ class MC_Model(nn.Module):
         out[idx] = -uncertainty
         return out
     
-    
+
+# I tested this as well to make sure that the bad OOD performance didn't come from
+# using the softmax output. This actually worked worse
 class MC_Model_logit(nn.Module):
     def __init__(self, model, iterations=7, classes=10):
         super().__init__()

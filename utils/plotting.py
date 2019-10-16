@@ -20,6 +20,7 @@ def plot_samples(Y, data, dataset='MNIST'):
     plt.show()
     print('\n')
     
+    
 classes_FMNIST = (
 'shirt',
 'trousers',
@@ -31,6 +32,7 @@ classes_FMNIST = (
 'sneaker',
 'bag',
 'boot')
+   
     
 classes_CIFAR10 = ('plane',
  'car',
@@ -42,6 +44,7 @@ classes_CIFAR10 = ('plane',
  'horse',
  'ship',
  'truck')
+
 
 classes_CIFAR100 = ['apple',
  'aquarium_fish',

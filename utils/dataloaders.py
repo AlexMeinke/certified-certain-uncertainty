@@ -301,7 +301,7 @@ def TinyImages(dataset, batch_size=None, shuffle=False, train=True, offset=0):
     
     return loader
 
-
+# Code from https://github.com/hendrycks/outlier-exposure
 class TinyImagesDataset(torch.utils.data.Dataset):
 
     def __init__(self, dataset, offset=0):

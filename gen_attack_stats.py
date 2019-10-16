@@ -1,3 +1,11 @@
+'''
+    Generates tables to evaluate worst-case out-of-distribution detection performance of models
+    specified in model_paths.py using random noise
+    Output goes to results/ as .csv and .txt (latex code) and a backup of 
+    seed images and confidences etc. is kept in results/backup/ using the 
+    utils.eval.StatsContainer class
+'''
+
 import torch
 import pandas as pd
 

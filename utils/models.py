@@ -13,6 +13,11 @@ from sklearn.decomposition import PCA
 
 
 class Metric(nn.Module):
+    '''
+        Abstract class that defines the concept of a metric. It is needed
+        to define mixture models with different metrics.
+        In the paper we use the PCAMetric
+    '''
     def __init__(self):
         super().__init__()
         
@@ -126,6 +131,9 @@ class PCAMetric(Metric):
 
     
 class MyPCA():
+    '''
+        A helper class that is used for adversarial attacks in a PCAMetric
+    '''
     def __init__(self, comp_vecs, singular_values, shape):
         self.comp_vecs = comp_vecs
         self.comp_vecs_inverse = self.comp_vecs.inverse()
@@ -279,7 +287,9 @@ class GMM(MixtureModel):
                 - .5* ( L**2/(2*var) ) - self.norm_const )
         return torch.logsumexp(bound.squeeze(),dim=0)
 
-    
+# Note that the standard pytorch implementation (LeNet) and the
+# standard tensorflow implementation (LeNetMadry) differ slightly
+# in the padding they use
 class LeNet(nn.Module):
     def __init__(self, preproc=torch.zeros(28, 28)):
         super().__init__()
@@ -324,6 +334,10 @@ class LeNetMadry(nn.Module):
 
     
 class RobustModel(nn.Module):
+    '''
+        The CCU model https://arxiv.org/abs/1909.12180 when fixing p(x|o)=1
+        Note that in the paper we also fit the out-distribution
+    '''
     def __init__(self, base_model, mixture_model, loglam, dim=784, classes=10):
         super().__init__()
         self.base_model = base_model
@@ -351,6 +365,10 @@ class RobustModel(nn.Module):
     
     
 class DoublyRobustModel(nn.Module):
+    '''
+        The CCU model https://arxiv.org/abs/1909.12180
+        Both in- and out-mixture models have to be passed as arguments
+    '''
     def __init__(self, base_model, mixture_model_in, mixture_model_out, loglam, dim=784, classes=10):
         super().__init__()
         self.base_model = base_model
@@ -380,15 +398,3 @@ class DoublyRobustModel(nn.Module):
         b2 = torch.logsumexp(a2, 0).squeeze()[:,None]
 
         return b1-b2
-    
-
-class TwoMoonsNet(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.fc1 = nn.Linear(2, 32)
-        self.fc2 = nn.Linear(64, 1)
-        
-    def forward(self, x):
-        x = F.ReLU(self.fc1(x))
-        x = F.ReLU(self.fc2(x))
-        return torch.sigmoid(x)

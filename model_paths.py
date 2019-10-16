@@ -1,3 +1,9 @@
+'''
+    Specify model paths of all models that you wish to benchmark using either 
+    gen_eval.py or gen_attack_stats.py
+'''
+
+
 import collections
 
 
@@ -255,61 +261,6 @@ class CIFAR10_models():
        # files = [file_ACET_OUT, file_CCU_double, file_joint]
         
         #keys = ['ACET', 'CCUd', 'CCU']
-        
-        self.file_dict = collections.OrderedDict(zip(keys, files))
-
-
-class CIFAR100_models():
-    def __init__(self):
-        file_joint = ('SavedModels/'
-                      'gmm__PCACIFAR100_lam0.0_n100_lr0.1_lrgmm1e-05_'
-                      'augm_flagTrue_train_typeCEDA_GMMgrad_vars mu var.pth'
-                     )
-
-        file_base = ('SavedModels/base/'
-                     'base_CIFAR100_lr0.1_augm_flagTrue_train_typeplain.pth'
-                    )
-
-        file_CEDA = ('SavedModels/base/'
-                     'base_CIFAR100_lr0.1_augm_flagTrue_train_typeCEDA.pth'
-                    )
-
-        file_ODIN = ('SavedModels/other/odin/'
-                     'CIFAR100_OUTSEEDS_ODIN.pth'
-                    )
-        
-        file_ACET = ('SavedModels/base/'
-                     'base_CIFAR100_lr0.1_augm_flagTrue_train_typeACET_steps40.pth'
-                    )
-        
-        file_ACET_OUT = ('SavedModels/base/'
-                     'base_CIFAR100_lr0.1_augm_flagTrue_train_typeACET_OUT_steps40.pth'
-                    )
-        
-        file_CCU_base = ('SavedModels/other/'
-                         'ccu_base_CIFAR100.pth'
-                        )
-        
-        file_CCU_double = ('SavedModels/'
-                         'gmm__PCACIFAR100_lam0.0_n100_lr0.1_lrgmm1e-05_'
-                         'augm_flagTrue_train_typeCEDA_GMM_OUTgrad_vars mu var_OUT.pth')
-        
-        file_GAN = ('SavedModels/other/gan/CIFAR100.pth')
-        
-        file_hendrycks = ('SavedModels/other/outlier-exposure/hendrycks_CIFAR100.pth')
-        
-        file_maha = ('SavedModels/other/mahalanobis/CIFAR100.pth')
-        
-        file_single_maha = ('SavedModels/other/single_mahalanobis/CIFAR100.pth')
-        
-        file_MCDO = ('SavedModels/other/mcdo/CIFAR100.pth')
-        
-        
-        files = [file_base, file_MCDO, file_GAN,
-                 file_ODIN, file_single_maha, file_ACET_OUT,
-                 file_hendrycks, file_CCU_double, file_joint]
-        
-        keys = ['Base', 'MCD', 'GAN', 'ODIN', 'Maha', 'ACET', 'OE', 'CCUd', 'CCU']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
         

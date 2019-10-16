@@ -1,3 +1,12 @@
+'''
+        Outlier Exposure (OE)
+        
+    Code for the models from https://arxiv.org/abs/1812.04606
+    almost the same as for the other ResNet Models but since they normalize their CIFAR10
+    at dataloading time I include this preprocessing step explicitly in the architecture
+'''
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

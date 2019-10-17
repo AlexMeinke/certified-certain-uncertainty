@@ -55,7 +55,8 @@ class ResNetTemp(nn.Module):
 class ModelODIN(nn.Module):
     def __init__(self, model, epsilon, device=torch.device('cpu')):
         super().__init__()
-        self.epsilon = epsilon
+        self.epsilon = nn.Parameter(torch.tensor(1.*epsilon, device=device), 
+                                    requires_grad=False)
         self.device = device
         self.model = model.to(device)
         
@@ -72,10 +73,14 @@ class ModelODIN(nn.Module):
             loss = losses.sum()
             
             grad = torch.autograd.grad (losses.sum(), x)[0]
-  
+        
         x = x + self.epsilon * grad
         x = torch.clamp(x, 0, 1).requires_grad_()
         return x
+    
+    def to(self, device):
+        self.device = device
+        return super(ModelODIN, self).to(device)
 
 
 def grid_search_variables(base_model, model_params, device, out_seeds=False):
@@ -171,9 +176,8 @@ def aggregate_stats(model_list, device, shape, classes=10,
     return stats
 
 
-model_dict = { 'MNIST':          LeNetTemp,
+model_dict = { 'MNIST':           LeNetTemp,
                'FMNIST':         ResNetTemp,
                'SVHN':           ResNetTemp,
                'CIFAR10':        ResNetTemp,
-               'CIFAR100':       ResNetTemp,
               }

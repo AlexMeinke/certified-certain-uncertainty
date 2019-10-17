@@ -27,7 +27,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Define hyperparameters.', prefix_chars='-')
 
 parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
-parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, FMNIST, SVHN, CIFAR10, CIFAR100')
+parser.add_argument('--dataset', type=str, default='MNIST', help='MNIST, FMNIST, SVHN, CIFAR10')
 
 
 hps = parser.parse_args()
@@ -78,9 +78,6 @@ elif dataset=='FMNIST':
     model = mc.vgg13(in_channels=1, num_classes=10)
 elif dataset in ['SVHN', 'CIFAR10']:
     model = mc.vgg13(in_channels=3, num_classes=10)
-elif dataset=='CIFAR100':
-    model = mc.vgg13(in_channels=3, num_classes=100)
-
 
 model = model.to(device)
 

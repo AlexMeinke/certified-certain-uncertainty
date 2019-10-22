@@ -18,7 +18,7 @@ class MNIST_models():
         file_GAN = ('SavedModels/other/gan/MNIST.pth')
         
         file_ODIN = ('SavedModels/other/odin/'
-                     'MNIST_OUTSEEDS_ODIN.pth'
+                     'MNIST_ODIN.pth'
                     )
         
         file_single_maha = ('SavedModels/other/single_mahalanobis/MNIST.pth')
@@ -52,7 +52,7 @@ class MNIST_models():
 class FMNIST_models():
     def __init__(self):
         file_base = ('SavedModels/base/'
-                     'base_FMNIST_lr0.001_augm_flagTrue_train_typeplain.pth'
+                     'base_FMNIST_lr0.1_augm_flagTrue_train_typeplain.pth'
                     )
         
         file_MCDO = ('SavedModels/other/mcdo/FMNIST.pth')
@@ -60,7 +60,7 @@ class FMNIST_models():
         file_GAN = ('SavedModels/other/gan/FMNIST.pth')
         
         file_ODIN = ('SavedModels/other/odin/'
-                     'FMNIST_OUTSEEDS_ODIN.pth'
+                     'FMNIST_ODIN.pth'
                     )
         
         file_single_maha = ('SavedModels/other/single_mahalanobis/FMNIST.pth')
@@ -93,7 +93,7 @@ class FMNIST_models():
 class SVHN_models():
     def __init__(self):
         file_base = ('SavedModels/base/'
-                     'base_SVHN_lr0.001_augm_flagTrue_train_typeplain.pth'
+                     'base_SVHN_lr0.1_augm_flagTrue_train_typeplain.pth'
                     )
         
         file_MCDO = ('SavedModels/other/mcdo/SVHN.pth')
@@ -101,7 +101,7 @@ class SVHN_models():
         file_GAN = ('SavedModels/other/gan/SVHN.pth')
         
         file_ODIN = ('SavedModels/other/odin/'
-                     'SVHN_OUTSEEDS_ODIN.pth'
+                     'SVHN_ODIN.pth'
                     )
         
         file_single_maha = ('SavedModels/other/single_mahalanobis/SVHN.pth')
@@ -134,7 +134,7 @@ class SVHN_models():
 class CIFAR10_models():
     def __init__(self):
         file_base = ('SavedModels/base/'
-                     'base_CIFAR10_lr0.001_augm_flagTrue_train_typeplain.pth'
+                     'base_CIFAR10_lr0.1_augm_flagTrue_train_typeplain.pth'
                     )
         
         file_MCDO = ('SavedModels/other/mcdo/CIFAR10.pth')
@@ -142,7 +142,7 @@ class CIFAR10_models():
         file_GAN = ('SavedModels/other/gan/CIFAR10.pth')
         
         file_ODIN = ('SavedModels/other/odin/'
-                     'CIFAR10_OUTSEEDS_ODIN.pth'
+                     'CIFAR10_ODIN.pth'
                     )
         
         file_single_maha = ('SavedModels/other/single_mahalanobis/CIFAR10.pth')

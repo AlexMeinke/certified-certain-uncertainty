@@ -180,4 +180,5 @@ model_dict = { 'MNIST':           LeNetTemp,
                'FMNIST':         ResNetTemp,
                'SVHN':           ResNetTemp,
                'CIFAR10':        ResNetTemp,
+               'CIFAR100':       ResNetTemp,
               }

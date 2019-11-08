@@ -79,6 +79,10 @@ def make_layers(cfg, in_channels):
     for v in cfg:
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        elif type(v)==tuple:
+            conv2d = nn.Conv2d(in_channels, v[0], kernel_size=3, padding=v[1])
+            layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = v[0]
         else:
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             layers += [conv2d, nn.ReLU(inplace=True)]
@@ -89,6 +93,7 @@ def make_layers(cfg, in_channels):
 cfg = {
     'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'B': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'B1': [(64,2), (64,2), 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
     'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
 }
@@ -99,5 +104,6 @@ def vgg13(pretrained=False, in_channels=3, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = VGG(make_layers(cfg['B'], in_channels=in_channels), **kwargs)
+    model_type = 'B1' if in_channels==1 else 'B'
+    model = VGG(make_layers(cfg[model_type], in_channels=in_channels), **kwargs)
     return model

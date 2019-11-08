@@ -113,7 +113,7 @@ for dataset in datasets:
     if hps.fit_out:
         model_list = model_list[:-1]
     
-    accuracies = [tt.test(model, device, model_params.test_loader, min_conf=.001)[0]
+    accuracies = [tt.test(model, device, model_params.test_loader, min_conf=.0)[0]
                   for model in model_list]
        
     shape = next(iter(model_params.cali_loader))[0][0].shape

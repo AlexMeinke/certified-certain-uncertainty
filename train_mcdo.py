@@ -78,6 +78,8 @@ elif dataset=='FMNIST':
     model = mc.vgg13(in_channels=1, num_classes=10)
 elif dataset in ['SVHN', 'CIFAR10']:
     model = mc.vgg13(in_channels=3, num_classes=10)
+elif dataset in ['CIFAR100']:
+    model = mc.vgg13(in_channels=3, num_classes=100)
 
 model = model.to(device)
 

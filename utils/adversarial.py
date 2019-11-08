@@ -3,9 +3,10 @@ import torch.nn.functional as F
 import torch.utils.data as data_utils
 
 
-def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False, steps=40, step_size=0.01):
+def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False, 
+                  steps=40, step_size=0.01, norm='inf'):
     '''
-        Runs an adversarial noise attack in l_2 norm
+        Runs an adversarial noise attack in l_inf norm
         Maximizes the confidence in some class (different from adversarial
         attack which maximizes confidence in some wrong class)
     '''
@@ -29,7 +30,6 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False, s
     
     else:
         with torch.no_grad():
-            batch_size = seed.shape[0]
             alpha = step_size * torch.ones(batch_size,1,1,1, device=device)
 
             orig_data = seed.to(device)
@@ -49,21 +49,41 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False, s
                 y = model(data)
                 losses = -y.max(1)[0]
                 #losses = y.sum(1)
-                grad = -torch.autograd.grad(losses.sum(), data)[0].sign()
+                grad = -torch.autograd.grad(losses.sum(), data)[0]
+                    
 
             with torch.no_grad():
+                if norm=='inf':
+                    grad = grad.sign()
+                else:
+                    grad = grad / grad.norm(p=norm)
+                
                 regret_index = losses > prev_losses
 
                 alpha[regret_index] /= 2.
+                alpha[1-regret_index] *= 1.1
                 data[regret_index] = prev_data[regret_index]
                 grad[regret_index] = prev_grad[regret_index]
 
-                prev_losses=losses
+                prev_losses = losses
                 prev_data = data
                 prev_grad = grad
-
+                
                 data += alpha * grad
-                delta = torch.clamp(data-orig_data, -epsilon, epsilon)
+                
+                delta = data - orig_data
+                
+                if norm=='inf':
+                    delta = torch.clamp(delta, -epsilon, epsilon)
+                    
+                else:                
+                    N = delta.norm(dim=-1, p=norm)
+
+                    index = N > epsilon
+
+                    delta[index] *= (epsilon / N[index])[:, None]
+                
+                    
                 data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
          
         with torch.no_grad():
@@ -90,6 +110,7 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
     model.eval()
     batch_size = seed.shape[0]
     orig_data = seed.clone()
+    
     if restarts>1:
         data = seed.clone()
         losses = 1e5*torch.ones(batch_size, device=device)
@@ -132,7 +153,7 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
                 regret_index = losses > prev_losses
 
                 alpha[regret_index] /= 2.
-                alpha[regret_index] *= 1.1
+                alpha[1-regret_index] *= 1.1
                 data_pca[regret_index] = prev_data_pca[regret_index]
                 grad[regret_index] = prev_grad[regret_index]
                 

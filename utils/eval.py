@@ -91,7 +91,6 @@ def write_log(df, writer, epoch=0):
     
 def evaluate(model, device, dataset, loaders, load_adversaries=False, 
              writer=None, epoch=0, drop_mmc=False):
-
     if load_adversaries:
         NoiseLoader = loaders[-1][1]
         print('[INFO] Loading Adversaries...')

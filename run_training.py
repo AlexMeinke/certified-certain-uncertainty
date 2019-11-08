@@ -108,7 +108,7 @@ if hps.fit_out:
 
 if hps.warmstart!='None':
     saving_string += '_warmstart'
-if hps.train_type=='ACET':
+if hps.train_type=='ACET' or hps.train_type=='CEDA_ACET':
     saving_string += '_steps' + str(hps.steps)
     
 
@@ -161,7 +161,7 @@ else:
 
 lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.loglam)
 
-writer = SummaryWriter('logs/'+saving_string+str(datetime.datetime.now()))
+writer = SummaryWriter('logs/' + saving_string + str(datetime.datetime.now()))
 
 if hps.fit_out:
     noise_loader = iter(dl.TinyImages(hps.dataset, shuffle=False))
@@ -173,6 +173,7 @@ for epoch in range(hps.epochs):
     if epoch+1 in [50,75,90]:
         for group in optimizer.param_groups:
             group['lr'] *= .1
+          #  group['weight_decay'] *= .1
  
     losses = tt.training_dict[hps.train_type](model, device, model_params.train_loader,  
                                               optimizer, epoch, lam=lam, verbose=hps.verbose,
@@ -180,7 +181,7 @@ for epoch in range(hps.epochs):
     
     trainloss, correct_train, likelihood_loss = losses
 
-    correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader)
+    correct, av_conf, test_loss = tt.test(model, device, model_params.test_loader, min_conf=1./model_params.classes)
     
     writer.add_scalar('InDistribution/TrainLoss', trainloss, epoch)
     writer.add_scalar('InDistribution/TrainAccuracy', correct_train, epoch)

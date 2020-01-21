@@ -19,8 +19,11 @@ parser = argparse.ArgumentParser(description='Parse arguments.', prefix_chars='-
 
 parser.add_argument('--dataset', type=str, required=True, help='Which dataset to use.')
 parser.add_argument('--gpu', type=int, default=0, help='GPU index.')
-parser.add_argument('--drop_mmc', type=bool, default=False, help='whether to use the more compact format.')
+parser.add_argument('--drop_mmc', type=bool, default=False, 
+                    help='whether to use the more compact format.')
 parser.add_argument('--batch_size', type=int, default=100, help='Batch size.')
+parser.add_argument('--aupr', type=bool, default=False, 
+                    help='If True, then computes AUPR, else uses AUROC.')
 
 hps = parser.parse_args()
 
@@ -35,7 +38,7 @@ accuracies = [tt.test(model, device, model_params.test_loader, min_conf=.0)[0]
               for model in model_list]
 
 results = [ev.evaluate(model, device, model_params.data_name, 
-                       model_params.loaders, drop_mmc=hps.drop_mmc) 
+                       model_params.loaders, drop_mmc=hps.drop_mmc, aupr=hps.aupr) 
            for model in model_list]
 
 test_error = [100*(1.-acc) for acc in accuracies]
@@ -48,7 +51,11 @@ df = pd.concat(results, axis=1, keys=keys)
 
 time = str(datetime.datetime.now())
 
-file = 'results/' + hps.dataset + '_' + time
+file = 'results/' + hps.dataset + '_'
+if hps.aupr:
+    file += 'aupr_'
+file += time
+
 df.to_csv(file + '.csv')
 df.to_pickle(file)
 

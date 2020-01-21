@@ -324,7 +324,7 @@ def train_CEDA_ACET(model, device, train_loader, optimizer, epoch,
         
         
         loss1 = criterion(output, target)
-        loss2 = - output_adv.mean()
+        loss2 =  output_adv.max(1)[0]
         
         loss = p_in*loss1 + p_out*loss2
 
@@ -377,6 +377,36 @@ def get_mean(model, device, test_loader):
     conf = torch.cat(conf, 0)
     
     return conf.mean()
+
+
+def get_conf(model, device, test_loader):
+    model.eval()
+    conf = []
+    with torch.no_grad():
+        for data, _ in test_loader:
+            data = data.to(device)
+            output = model(data)
+
+            conf.append(output.max(1)[0].cpu())
+            
+    conf = torch.cat(conf, 0)
+    
+    return conf
+
+
+def get_median(model, device, test_loader):
+    model.eval()
+    conf = []
+    with torch.no_grad():
+        for data, _ in test_loader:
+            data = data.to(device)
+            output = model(data)
+
+            conf.append(output.max(1)[0].cpu())
+            
+    conf = torch.cat(conf, 0)
+    
+    return conf.median()
 
 
 training_dict = {'plain': train_plain,

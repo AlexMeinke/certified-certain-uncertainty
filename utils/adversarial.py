@@ -12,15 +12,14 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False,
     '''
     model.eval()
     batch_size = seed.shape[0]
-    orig_data = seed.clone()
+    orig_data = torch.tensor(seed.detach().cpu().numpy()).to(device)
     
     if restarts>1:
         data = seed.clone()
         losses = 1e5*torch.ones(batch_size, device=device)
         for _ in range(restarts):
             current_data, current_losses = gen_adv_noise(model, device, seed, epsilon=epsilon,
-                                                         restarts=1, perturb=True, 
-                                                         steps=steps)
+                                                         restarts=1, perturb=True, steps=steps)
             with torch.no_grad():
                 index = losses > current_losses
                 data[index] = current_data[index]
@@ -83,7 +82,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False,
 
                     delta[index] *= (epsilon / N[index])[:, None]
                 
-                    
+                
                 data = torch.clamp(orig_data + delta, 0, 1).requires_grad_()
          
         with torch.no_grad():
@@ -94,7 +93,7 @@ def gen_adv_noise(model, device, seed, epsilon=0.1, restarts=1, perturb=False,
             index = orig_losses < losses
             data[index] = orig_data[index]
             losses[index] = losses[index]
-        return data, losses    
+        return torch.clamp(data, 0, 1), losses    
 
 
 def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, steps=40, alpha=0.01):
@@ -207,8 +206,8 @@ def gen_pca_noise(model, device, seed, pca, epsilon, restarts=1, perturb=False, 
 
 def gen_adv_sample(model, device, seed, label, epsilon=0.1, steps=40, step_size=0.001):
     '''
-        Runs adversarial attack in l_2 norm
-        ot used for the results in https://arxiv.org/abs/1909.12180
+        Runs adversarial attack in l_inf norm
+        not used for the results in https://arxiv.org/abs/1909.12180
     '''
     model.eval()
     correct_index = label[:,None]!=torch.arange(10)[None,:]

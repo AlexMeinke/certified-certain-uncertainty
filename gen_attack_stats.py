@@ -41,6 +41,8 @@ parser.add_argument('--fit_out', type=bool, default=False,
                     help='use GMM for the out-distribution as well.')
 parser.add_argument('--out_seeds', type=bool, default=False, 
                     help='use 80m tiny images as seeds for attack.')
+parser.add_argument('--load_seeds', type=str, default=None, 
+                    help='load out seeds from previous instance.')
 
 hps = parser.parse_args()
 
@@ -68,6 +70,8 @@ for dataset in datasets:
     
 if hps.out_seeds:
     saving_string += '_OUTSEEDS'
+if hps.load_seeds is not None:
+    saving_string += '_LOADED'
     
 saving_string += '_' + str(datetime.datetime.now())
 
@@ -122,11 +126,16 @@ for dataset in datasets:
         gmm = model_list[-1].mm
         gmm_out = model_list[-1].mm_out
         
+        if hps.load_seeds:
+            file = 'results/backup/' + hps.load_seeds
+            out_seed_flag = torch.load(file).seeds
+        else:
+            out_seed_flag = hps.out_seeds
 
         results = ev.aggregate_adv_stats_out(model_list, gmm, gmm_out, device, 
                                              shape, classes=model_params.classes, 
                                              batches=batches, batch_size=batch_size, 
-                                             steps=steps, out_seeds=hps.out_seeds,
+                                             steps=steps, out_seeds=out_seed_flag,
                                              restarts=restarts, alpha=alpha)
         stats, bounds, seeds, samples = results
         

@@ -3,7 +3,6 @@
     and for generating pandas Dataframes from the results
 '''
 
-
 import torch
 import numpy as np
 import pandas as pd
@@ -19,7 +18,26 @@ import utils.gmm_helpers as gmm_helpers
 log = lambda x: np.log(x)
 
 
-def test_metrics(model, device, in_loader, out_loader):
+def aupr_score(y_true, y_scores):
+    thresholds = sorted(y_scores)
+    
+    tp = np.array([y_true[y_scores>=threshold].sum() for threshold in thresholds])
+    fp = np.array([(1-y_true[y_scores>=threshold]).sum() for threshold in thresholds])
+    fn = np.array([(y_true[y_scores<threshold]).sum() for threshold in thresholds])
+
+    prec = tp / (tp+fp)
+    prec = np.insert(prec, 0, 0.)
+    prec = np.insert(prec, -1, 1.)
+
+    recall = tp / (tp+fn)
+    recall = np.insert(recall, 0, 1.)
+    recall = np.insert(recall, -1, 0.)
+
+    aupr = np.trapz(recall, prec)
+    return aupr
+
+
+def test_metrics(model, device, in_loader, out_loader, aupr=False):
     with torch.no_grad():
         model.eval()
         conf_in = []
@@ -31,10 +49,6 @@ def test_metrics(model, device, in_loader, out_loader):
             out = model(data_in)
             output_in = out.max(1)[0]
             
-         #   min_conf = 1./out.shape[1]
-            
-         #   idx = output_in < min_conf
-         #   output_in[idx] = min_conf
             conf_in.append(output_in)
             
         for data_out, _ in out_loader:    
@@ -42,9 +56,6 @@ def test_metrics(model, device, in_loader, out_loader):
             out = model(data_out)
             output_out = out.max(1)[0]
             
-          #  min_conf = 1./out.shape[1]
-          #  idx = output_out < min_conf
-          #  output_out[idx] = min_conf
             conf_out.append(output_out)
             
         conf_in = torch.cat(conf_in)
@@ -56,18 +67,22 @@ def test_metrics(model, device, in_loader, out_loader):
                               conf_out]).cpu().numpy()
         
         mmc = conf_out.exp().mean().item()
-        auroc = roc_auc_score(y_true, y_scores)
+        if aupr:
+            auroc = aupr_score(y_true, y_scores)
+        else:
+            auroc = roc_auc_score(y_true, y_scores)
+            
         fp95 = ((conf_out.exp() > 0.95).float().mean().item())
         return mmc, auroc, fp95
 
     
-def evaluate_model(model, device, base_loader, loaders, drop_mmc=False):
+def evaluate_model(model, device, base_loader, loaders, drop_mmc=False, aupr=False):
     metrics = []
     if drop_mmc:
         # mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
         # metrics.append(['orig', 0.])
         for (name, data_loader) in loaders:
-            mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
+            mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader, aupr=aupr)
             metrics.append([name, 100*auroc])
 
         df = pd.DataFrame(metrics, columns = ['DataSet', 'AUC'])
@@ -75,7 +90,7 @@ def evaluate_model(model, device, base_loader, loaders, drop_mmc=False):
         mmc, _, _ = test_metrics(model, device, base_loader, base_loader)
         metrics.append(['orig', 100*mmc, 0.])
         for (name, data_loader) in loaders:
-            mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader)
+            mmc, auroc, fp95 = test_metrics(model, device, base_loader, data_loader, aupr=aupr)
             metrics.append([name, 100*mmc, 100*auroc])
 
         df = pd.DataFrame(metrics, columns = ['DataSet', 'MMC', 'AUC'])
@@ -90,7 +105,7 @@ def write_log(df, writer, epoch=0):
     
     
 def evaluate(model, device, dataset, loaders, load_adversaries=False, 
-             writer=None, epoch=0, drop_mmc=False):
+             writer=None, epoch=0, drop_mmc=False, aupr=False):
     if load_adversaries:
         NoiseLoader = loaders[-1][1]
         print('[INFO] Loading Adversaries...')
@@ -106,7 +121,7 @@ def evaluate(model, device, dataset, loaders, load_adversaries=False,
     else:
         temp = loaders
     df = evaluate_model(model, device, dl.datasets_dict[dataset](train=False), 
-                        temp, drop_mmc=drop_mmc)
+                        temp, drop_mmc=drop_mmc, aupr=aupr)
                 
     if writer is not None:
         write_log(df, writer, epoch)
@@ -165,7 +180,7 @@ def aggregate_adv_stats(model_list, gmm, device, shape, classes=10,
 
 
 def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10, 
-                            batches=10, batch_size=100, steps=200, out_seeds=False,
+                            batches=10, batch_size=100, steps=200, out_seeds=None,
                             restarts=10, alpha=1., lam=1.):
     
     pca = models.MyPCA(gmm.metric.comp_vecs.t(), gmm.metric.singular_values, shape)
@@ -178,16 +193,20 @@ def aggregate_adv_stats_out(model_list, gmm, gmm_out, device, shape, classes=10,
     samples = []
     seeds = []
     
-    if out_seeds:
-        if shape[0]==1:
-            dataset = 'MNIST'
-        else:
-            dataset = 'CIFAR10'
-        out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size, train=False))
+    if out_seeds is not None:
+        if type(out_seeds)!=torch.Tensor:
+            if shape[0]==1:
+                dataset = 'MNIST'
+            else:
+                dataset = 'CIFAR10'
+            out_loader = iter(dl.TinyImages(dataset, batch_size=batch_size, train=False))
 
-    for _ in range(batches):
-        if out_seeds:
-            seed = next(out_loader)[0].to(device)
+    for idx in range(batches):
+        if out_seeds is not None:
+            if type(out_seeds)!=torch.Tensor:
+                seed = next(out_loader)[0].to(device)
+            else:
+                seed = out_seeds[idx].to(device)
         else:
             seed = torch.rand((batch_size,) + tuple(shape), device=device)
         batch_bounds = []

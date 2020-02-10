@@ -2,6 +2,8 @@
 
 This repository contains the code that was used to obtain the results reported in https://arxiv.org/abs/1909.12180. In it we propose a *Certified Certain Uncertainty* (CCU) model with which one can train deep neural networks that provably make low-confidence predictions far away from the training data.
 
+<p align="center"><img src="res/two_moons.png" width="600"></p>
+
 ## Training the models
 
 Before training a CCU model, one has to first initialize a Gaussian mixture model on the datasets from the in- and out-distribution [80 Million Tiny Images](http://horatio.cs.nyu.edu/mit/tiny/data/tiny_images.bin). 
@@ -38,7 +40,7 @@ python gen_attack_stats.py --datasets MNIST --wide_format 1 --fit_out 1
 ```
 where mutliple datasets could be specified. The **gen_attack_stats.py** script dumps full information, like all confidences and perturbed samples in results/backup. This path has to be specified when reproducing Figure 2 and 3 with their respective notebooks.
 
-## Citation
+## Cite us
 ```
 @article{meinke2020towards,
   title={Towards neural networks that provably know when they don't know},

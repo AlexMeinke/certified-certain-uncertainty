@@ -55,11 +55,10 @@ class MNIST_models():
                  file_ODIN, file_single_maha, file_ACET_OUT, file_ACET,
                  file_hendrycks, file_CCU_double, file_CCU_single]
         
-        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
+        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 
+                'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
                
-
-        #files = [file_DE, file_edl, file_CCU_double, file_CCU_single]
-        #keys = ['DE', 'EDL', 'CCU', 'CCUs']
+        file_GAN = ('SavedModels/other/gan/MNIST_batchstack.pth')
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
 
@@ -113,7 +112,8 @@ class FMNIST_models():
                  file_ODIN, file_single_maha, file_ACET_OUT, file_ACET,
                  file_hendrycks, file_CCU_double, file_CCU_single]
         
-        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
+        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 
+                'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
        
@@ -166,7 +166,8 @@ class SVHN_models():
                  file_ODIN, file_single_maha, file_ACET_OUT, file_ACET,
                  file_hendrycks, file_CCU_double, file_CCU_single]
         
-        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
+        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 
+                'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
 
@@ -219,7 +220,8 @@ class CIFAR10_models():
                  file_ODIN, file_single_maha, file_ACET_OUT, file_ACET,
                  file_hendrycks, file_CCU_double, file_CCU_single]
         
-        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
+        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 
+                'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
         
@@ -272,7 +274,8 @@ class CIFAR100_models():
                  file_ODIN, file_single_maha, file_ACET_OUT, file_ACET,
                  file_hendrycks, file_CCU_double, file_CCU_single]
         
-        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha', 'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
+        keys = ['Base', 'MCD', 'EDL', 'DE', 'GAN', 'ODIN', 'Maha',
+                'ACET', 'ACET2', 'OE', 'CCU', 'CCUs']
         
         self.file_dict = collections.OrderedDict(zip(keys, files))
         

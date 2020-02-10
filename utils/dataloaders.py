@@ -303,7 +303,6 @@ def TinyImages(dataset, batch_size=None, shuffle=False, train=True, offset=0):
 
 # Code from https://github.com/hendrycks/outlier-exposure
 class TinyImagesDataset(torch.utils.data.Dataset):
-
     def __init__(self, dataset, offset=0):
         if dataset in ['CIFAR10', 'CIFAR100']:
             exclude_cifar = True

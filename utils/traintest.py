@@ -56,7 +56,7 @@ def train_CEDA(model, device, train_loader, optimizer, epoch,
     correct = 0
     
     p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
-    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
+    p_out = torch.tensor(lam, device=device, dtype=torch.float) * p_in
     
     if noise_loader is not None:
         enum = enumerate(noise_loader)
@@ -106,7 +106,7 @@ def train_CEDA_gmm(model, device, train_loader, optimizer, epoch,
     correct = 0
     
     p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
-    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
+    p_out = torch.tensor(lam, device=device, dtype=torch.float) * p_in
     
     log_p_in = p_in.log()
     log_p_out = p_out.log()
@@ -175,7 +175,7 @@ def train_CEDA_gmm_out(model, device, train_loader, optimizer, epoch,
     correct = 0
     
     p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
-    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
+    p_out = torch.tensor(lam, device=device, dtype=torch.float) * p_in
     
     log_p_in = p_in.log()
     log_p_out = p_out.log()
@@ -244,7 +244,7 @@ def train_ACET(model, device, train_loader, optimizer, epoch,
     correct = 0
     
     p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
-    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
+    p_out = torch.tensor(lam, device=device, dtype=torch.float) * p_in
     
     
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -256,7 +256,9 @@ def train_ACET(model, device, train_loader, optimizer, epoch,
         else:
             noise = torch.rand_like(data)
             
-        noise, _ = adv.gen_adv_noise(model, device, noise, epsilon=epsilon, steps=40, step_size=0.01)
+        noise, _ = adv.gen_adv_noise(model, device, noise.clone(), 
+                                     epsilon=epsilon, steps=40, step_size=0.1)
+        
         model.train()
         
         full_data = torch.cat([data, noise], 0)
@@ -267,64 +269,7 @@ def train_ACET(model, device, train_loader, optimizer, epoch,
         
         
         loss1 = criterion(output, target)
-        loss2 = - output_adv.mean()
-        
-        loss = p_in*loss1 + p_out*loss2
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        
-        train_loss += loss.item()
-        _, predicted = output.max(1)
-        correct += predicted.eq(target).sum().item()
-        if (batch_idx % verbose == 0) and verbose>0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
-    return train_loss/len(train_loader.dataset), correct/len(train_loader.dataset), 0.
-
-
-# hybrid of CEDA and ACET as introduced in https://arxiv.org/pdf/1812.05720.pdf
-def train_CEDA_ACET(model, device, train_loader, optimizer, epoch, 
-               lam=1., verbose=-1, noise_loader=None, epsilon=.3):
-    criterion = nn.NLLLoss()
-    model.train()
-    
-    train_loss = 0
-    correct = 0
-    
-    p_in = torch.tensor(1. / (1. + lam), device=device, dtype=torch.float)
-    p_out = torch.tensor(lam * p_in, device=device, dtype=torch.float)
-    
-    
-    for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(device), target.to(device)
-        
-        
-        if noise_loader is not None:
-            noise = next(noise_loader)[0].to(device)
-        else:
-            noise = torch.rand_like(data)
-            
-        size = int(noise.shape[0]/2)
-        
-        noise_ceda = noise[:size]
-        noise_acet = noise[size:]
-        noise_acet, _ = adv.gen_adv_noise(model, device, noise_acet, 
-                                          epsilon=epsilon, steps=40, step_size=0.01)
-        model.train()
-        
-        
-        full_data = torch.cat([data, noise_ceda, noise_acet], 0)
-        full_out = model(full_data)
-        
-        output = full_out[:data.shape[0]]
-        output_adv = full_out[data.shape[0]+1:]
-        
-        
-        loss1 = criterion(output, target)
-        loss2 =  output_adv.max(1)[0]
+        loss2 = output_adv.max(1)[0].mean()
         
         loss = p_in*loss1 + p_out*loss2
 
@@ -413,6 +358,5 @@ training_dict = {'plain': train_plain,
                   'CEDA': train_CEDA,
                   'CEDA_GMM' : train_CEDA_gmm,
                   'ACET' : train_ACET,
-                  'CEDA_GMM_OUT' : train_CEDA_gmm_out,
-                  'CEDA_ACET' : train_CEDA_ACET
+                  'CEDA_GMM_OUT' : train_CEDA_gmm_out
                 }

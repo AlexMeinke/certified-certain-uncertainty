@@ -37,11 +37,9 @@ class MNIST_params():
         
 class FMNIST_params():
     def __init__(self, augm_flag=True, batch_size=128):
-        # self.base_model = models.LeNetMadry()
         self.data_name = 'FMNIST'
         
         self.base_model = resnet.ResNet18(num_of_channels=1)
-        # self.base_model = resnet.WideResNet(3, 1, num_of_channels=1)
         
         self.train_loader = dl.FMNIST(train=True, batch_size=batch_size, augm_flag=augm_flag)
         self.cali_loader = dl.FMNIST(train=True, batch_size=batch_size, augm_flag=False)
@@ -103,8 +101,6 @@ class CIFAR10_params():
              ('UniformNoise', dl.UniformNoise(dataset=self.data_name, batch_size=batch_size))]
         
         self.tinyimage_loader = dl.TinyImages(self.data_name, batch_size=100)
-        #self.tinyimage_loader = dl.SVHN(train=False, batch_size=100)
-        #self.tinyimage_loader = dl.LSUN_CR(train=False)
         
         self.data_used = 50000
         self.epsilon = 0.3

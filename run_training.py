@@ -174,6 +174,11 @@ for epoch in range(hps.epochs):
         for group in optimizer.param_groups:
             group['lr'] *= .1
           #  group['weight_decay'] *= .1
+    if hps.train_type=='ACET':
+        if epoch<3:
+            lam = 0.001
+        else:
+            lam = model.loglam.data.exp().item() if hps.use_gmm else np.exp(hps.loglam)
  
     losses = tt.training_dict[hps.train_type](model, device, model_params.train_loader,  
                                               optimizer, epoch, lam=lam, verbose=hps.verbose,

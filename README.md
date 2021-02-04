@@ -40,6 +40,10 @@ python gen_attack_stats.py --datasets MNIST --wide_format 1 --fit_out 1
 ```
 where mutliple datasets could be specified. The **gen_attack_stats.py** script dumps full information, like all confidences and perturbed samples in results/backup. This path has to be specified when reproducing Figure 2 and 3 with their respective notebooks.
 
+### Pre-trained Models
+
+Our pre-trained CCU models are available [here](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpYx7ncGCYdetJC). 
+
 ## Cite us
 ```
 @article{meinke2020towards,

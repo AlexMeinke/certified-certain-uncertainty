@@ -42,7 +42,11 @@ where mutliple datasets could be specified. The **gen_attack_stats.py** script d
 
 ### Pre-trained Models
 
-Our pre-trained CCU models are available [here](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpYx7ncGCYdetJC). 
+Our pre-trained CCU model weights are available [here](https://nc.mlcloud.uni-tuebingen.de/index.php/s/HpYx7ncGCYdetJC). Since the **gen_eval.py** script expects to load models but we are providing model weights, you need to load and save the downloaded weights by running for example
+```
+python load_pretrained.py --dataset CIFAR10 --pretrained CIFAR10.pt
+```
+This saves a file **CIFAR10.pth** that you can register in **model_paths.py**.
 
 ## Cite us
 ```
